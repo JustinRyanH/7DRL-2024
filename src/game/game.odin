@@ -6,7 +6,6 @@ import "core:io"
 import math "core:math/linalg"
 import "core:math/rand"
 import "core:mem"
-import "core:strings"
 
 import "./input"
 

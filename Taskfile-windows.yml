@@ -14,7 +14,7 @@ tasks:
   platform:
     deps: [game]
     cmds:
-      - odin build src/main -out:bin/Breakit.exe -debug
+      - odin build src/main -out:bin/7DRL.exe -debug
     aliases:
       - p
     silent: true
