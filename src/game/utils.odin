@@ -1,5 +1,10 @@
 package game
 
+import "core:hash"
+import "core:strings"
+
+import "./input"
+
 FancyTextDefaults :: FancyText{WHITE, .Left, 0}
 
 FancyText :: struct {
@@ -51,4 +56,18 @@ draw_text_fancy :: proc(
 
 		text_cmds.draw(font, txt, pos - dims * 0.5, size, settings.spacing, settings.color)
 	}
+}
+
+get_frame_id :: proc(frame_input: input.FrameInput) -> int {
+	return frame_input.current_frame.meta.frame_id
+}
+
+generate_u64_from_string :: proc(s: string) -> u64 {
+	return hash.murmur64b(transmute([]u8)s)
+}
+
+
+generate_u64_from_cstring :: proc(cs: cstring) -> u64 {
+	s := strings.clone_from_cstring(cs, context.temp_allocator)
+	return hash.murmur64b(transmute([]u8)s)
 }
