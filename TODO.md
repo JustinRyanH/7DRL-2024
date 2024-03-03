@@ -1,14 +1,13 @@
 # TODO
 
-## Active
+## 2024-03-03
 
-## Core
-
-## Nice to Haves
-
-## Do Much Later
-
-## DONE
+[ ] Render Character on Screen
+[ ] Get Character Grid Movement Going (Mouse and Click)
+[ ] Build Map
+[ ] Generate Dungeon
+[ ] Add Enemies
+[ ] Combat
 
 ## THOUGHTS
 
