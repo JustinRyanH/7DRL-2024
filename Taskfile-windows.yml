@@ -1,0 +1,47 @@
+version: "3"
+
+tasks:
+  default:
+    cmds:
+      - task: test
+
+  setup:
+    cmds:
+      - task: platform
+      - task: game
+      - task: test
+
+  platform:
+    deps: [game]
+    cmds:
+      - odin build src/main -out:bin/Breakit.exe -debug
+    aliases:
+      - p
+    silent: true
+    generates:
+      - ./bin/Breakit.exe
+    sources:
+      - ./**/*.odin
+
+  game:
+    deps: [test]
+    cmds:
+      - odin build src/game -build-mode:dll -out:bin/game.dll -debug
+    aliases:
+      - g
+    silent: true
+    generates:
+      - ./bin/game.dll
+    sources:
+      - ./src/game/**/*.odin
+
+  test:
+    cmds:
+      - odin test src/game -out:bin/game_test.exe
+      - odin test src/main -out:bin/platform_test.exe
+    aliases:
+      - t
+    method: none
+    silent: true
+    sources:
+      - ./src/**/*.doin
