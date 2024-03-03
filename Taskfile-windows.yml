@@ -33,7 +33,7 @@ tasks:
     generates:
       - ./bin/game.dll
     sources:
-      - ./src/game/**/*.odin
+      - ./**/*.odin
 
   test:
     cmds:
