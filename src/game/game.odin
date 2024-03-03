@@ -12,6 +12,9 @@ import "./input"
 import mu "../microui"
 
 
+WorldPosition :: [2]u32
+
+
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
@@ -20,10 +23,27 @@ GameFonts :: struct {
 	kenney_future: Font,
 }
 
+Character :: struct {
+	position: WorldPosition,
+}
+
+EntityHandle :: distinct Handle
+Entity :: union {
+	Character,
+}
+
+Entities :: DataPool(1024, Entity, EntityHandle)
+
 GameMemory :: struct {
-	scene_width:  f32,
-	scene_height: f32,
-	fonts:        GameFonts,
+	scene_width:       f32,
+	scene_height:      f32,
+	tile_world_width:  u32,
+	tile_world_height: u32,
+
+	// Games
+	fonts:             GameFonts,
+	entities:          Entities,
+	character:         EntityHandle,
 }
 
 
@@ -47,6 +67,16 @@ game_setup :: proc() {
 
 	g_mem.scene_width = 800
 	g_mem.scene_height = 600
+	g_mem.tile_world_height = 80
+	g_mem.tile_world_width = 60
+
+	e, h, is_ok := data_pool_add_empty(&g_mem.entities)
+	if !is_ok {
+		panic("Failed to add Character")
+	}
+	e^ = Character{WorldPosition{1, 1}}
+	g_mem.character = h
+
 }
 
 @(export)
@@ -56,7 +86,9 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
-	return false
+	if input.is_pressed(.D) {
+	}
+	return ctx.cmds.should_close_game()
 }
 
 @(export)
@@ -65,6 +97,27 @@ game_draw :: proc() {
 	width, height := g_mem.scene_width, g_mem.scene_height
 	draw_cmds := &ctx.draw_cmds
 	draw_cmds.clear(BLACK)
+
+
+	a, found := data_pool_get(&g_mem.entities, g_mem.character)
+	if found {
+		character, ok := a.(Character)
+		if ok {
+			size := Vector2{10, 10}
+
+			scale_x, scale_y :=
+				g_mem.scene_width /
+				cast(f32)g_mem.tile_world_width,
+				g_mem.scene_height /
+				cast(f32)g_mem.tile_world_height
+
+			p := Vector2{cast(f32)character.position.x, cast(f32)character.position.y}
+			real_p := p * Vector2{scale_x, scale_y}
+
+			draw_cmds.draw_shape(Rectangle{real_p, size, 0}, RED)
+
+		}
+	}
 }
 
 

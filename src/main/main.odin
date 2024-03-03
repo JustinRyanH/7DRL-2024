@@ -34,51 +34,11 @@ get_current_frame :: proc(idx: int) -> (frame_input: input.FrameInput, err: inpu
 	return
 }
 
-add_frame :: proc(ipf: ^InputRecordingFile) {
+add_frame :: proc() {
 	u_input := rl_platform.get_current_user_input()
-	u_input.meta.frame_id = ipf.length
-	input_recording_append(ipf, &u_input)
-	ipf.length += 1
+	u_input.meta.frame_id = len(input_stream)
 	append(&input_stream, u_input)
 }
-
-InputErroringError :: union {
-	os.Errno,
-}
-
-InputRecordingFile :: struct {
-	handle:   os.Handle,
-	filepath: string,
-	ready:    bool,
-	length:   int,
-}
-
-input_recording_begin :: proc(ipf: ^InputRecordingFile, file: string) -> InputErroringError {
-	handle, err := os.open(file, os.O_WRONLY | os.O_TRUNC | os.O_CREATE)
-	if err != os.ERROR_NONE {
-		return err
-	}
-
-	ipf.filepath = file
-	ipf.ready = true
-	ipf.handle = handle
-
-	return os.ERROR_NONE
-}
-
-input_recording_append :: proc(
-	ipf: ^InputRecordingFile,
-	user_input: ^input.UserInput,
-) -> os.Errno {
-	_, err := os.write_ptr(ipf.handle, user_input, size_of(input.UserInput))
-	return err
-}
-
-input_recording_write_header :: proc(ipf: ^InputRecordingFile) {
-	header := input.get_file_header()
-	os.write_ptr(ipf.handle, &header, size_of(header))
-}
-
 
 main :: proc() {
 	default_allocator := context.allocator
@@ -112,10 +72,6 @@ main :: proc() {
 	game_api.update_ctx(ctx)
 	game_api.init()
 	game_api.setup()
-
-	ipf := InputRecordingFile{}
-	input_recording_begin(&ipf, "logs/input.log")
-	input_recording_write_header(&ipf)
 
 	for {
 		defer {
@@ -163,7 +119,7 @@ main :: proc() {
 		time := rl.GetTime()
 		switch pb in &ctx.playback {
 		case input.Recording:
-			add_frame(&ipf)
+			add_frame()
 
 			current_frame, err = get_current_frame(pb.index)
 		case input.Loop:
