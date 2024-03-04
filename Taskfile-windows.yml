@@ -9,7 +9,6 @@ tasks:
     cmds:
       - task: platform
       - task: game
-      - task: test
 
   platform:
     deps: [game]
@@ -19,12 +18,12 @@ tasks:
       - p
     silent: true
     generates:
-      - ./bin/Breakit.exe
+      - ./bin/7DRL.exe
     sources:
       - ./**/*.odin
 
   game:
-    deps: [test]
+    deps: []
     cmds:
       - odin build src/game -build-mode:dll -out:bin/game.dll -debug
     aliases:
@@ -34,14 +33,3 @@ tasks:
       - ./bin/game.dll
     sources:
       - ./**/*.odin
-
-  test:
-    cmds:
-      - odin test src/game -out:bin/game_test.exe
-      - odin test src/main -out:bin/platform_test.exe
-    aliases:
-      - t
-    method: none
-    silent: true
-    sources:
-      - ./src/**/*.doin
