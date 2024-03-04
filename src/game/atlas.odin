@@ -20,6 +20,7 @@ map_entity_to_atlas :: proc(atlas: ImageHandle, entity: Entity) -> (img: AtlasIm
 	img.src.size = Vector2{16, 16}
 	img.size = Vector2{16, 16}
 	img.pos = entity.position
+	img.origin = Vector2{8, 8}
 
 
 	return img

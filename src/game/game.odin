@@ -22,6 +22,10 @@ GameFonts :: struct {
 	kenney_future: Font,
 }
 
+GameAtlasList :: struct {
+	transparent_color: ImageHandle,
+}
+
 EntityHandle :: distinct Handle
 Entity :: struct {
 	position: Vector2,
@@ -35,9 +39,9 @@ GameMemory :: struct {
 
 	// Games
 	fonts:      GameFonts,
+	atlas_list: GameAtlasList,
 	entities:   Entities,
 	character:  EntityHandle,
-	test_img:   Image,
 }
 
 
@@ -66,16 +70,16 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	// e^ = Entity{WorldPosition{1, 1}}
-	// g_mem.character = h
+	e^ = Entity{Vector2{}, .Man}
+	g_mem.character = h
 
-	test_img, img_load_err := ctx.draw_cmds.load_img(
+	transparent_color, img_load_err := ctx.draw_cmds.load_img(
 		"assets/textures/colored_transparent_packed.png",
 	)
 	if img_load_err != .NoError {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
 	}
-	g_mem.test_img = test_img
+	g_mem.atlas_list.transparent_color = transparent_color.handle
 
 }
 
@@ -86,9 +90,24 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
-	if input.is_pressed(frame_input, .D) {
-		// a := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+	character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+	if character == nil {
+		panic("The player should always be in the game")
 	}
+	if input.was_just_released(frame_input, .D) {
+		character.position += Vector2{16, 0}
+	}
+	if input.was_just_released(frame_input, .A) {
+		character.position -= Vector2{16, 0}
+	}
+	if input.was_just_released(frame_input, .W) {
+		character.position -= Vector2{0, 16}
+	}
+	if input.was_just_released(frame_input, .S) {
+		character.position += Vector2{0, 16}
+	}
+
+
 	return ctx.cmds.should_close_game()
 }
 
@@ -100,17 +119,18 @@ game_draw :: proc() {
 
 	camera := Camera2D{}
 	camera.target = Vector2{}
-	camera.offset = g_mem.scene_size / 2
+	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16}
 	camera.rotation = 0
-	camera.zoom = 3
-
-	example_pc := Entity{Vector2{}, .Man}
+	camera.zoom = 3.5
 
 	draw_cmds.begin_drawing_2d(camera)
 	defer draw_cmds.end_drawing_2d()
 
-	atlas_example := map_entity_to_atlas(g_mem.test_img.handle, example_pc)
-	draw_cmds.draw_img(atlas_example, WHITE)
+	entity_iter := data_pool_new_iter(&game.entities)
+	for entity in data_pool_iter(&entity_iter) {
+		atlas_example := map_entity_to_atlas(g_mem.atlas_list.transparent_color, entity)
+		draw_cmds.draw_img(atlas_example, WHITE)
+	}
 }
 
 
