@@ -51,11 +51,27 @@ Font :: struct {
 	name:   string,
 }
 
-TextCommandErrors :: enum {
-	NoError,
-	FontPoolFull,
-	FontNotFound,
+ImageHandle :: distinct Handle
+Image :: struct {
+	handle: ImageHandle,
+	path:   string,
 }
+
+PlatformCommandError :: enum {
+	NoError,
+	FontNotFound,
+	ImageNotFound,
+}
+
+AtlasImage :: struct {
+	image:    ImageHandle,
+	pos:      Vector2,
+	size:     Vector2,
+	origin:   Vector2,
+	src:      Rectangle,
+	rotation: f32,
+}
+
 
 //////////////////////////
 // Platform Abstraction //
@@ -72,7 +88,7 @@ TextCommands :: struct {
 		size: f32,
 		spacing: f32,
 		color: Color,
-	) -> TextCommandErrors,
+	) -> PlatformCommandError,
 }
 
 
@@ -89,6 +105,9 @@ PlatformDrawCommands :: struct {
 	clear:            proc(color: Color),
 	draw_text:        proc(msg: cstring, x, y: i32, font_size: i32, color: Color),
 	draw_shape:       proc(shape: Shape, color: Color),
+	load_img:         proc(file: cstring) -> (Image, PlatformCommandError),
+	unload_img:       proc(img: ImageHandle),
+	draw_img:         proc(image: AtlasImage, color: Color) -> PlatformCommandError,
 	draw_grid:        proc(slices: int, spacing: f32),
 	text:             TextCommands,
 }

@@ -39,6 +39,7 @@ GameMemory :: struct {
 	fonts:             GameFonts,
 	entities:          Entities,
 	character:         EntityHandle,
+	test_img:          Image,
 }
 
 
@@ -72,6 +73,14 @@ game_setup :: proc() {
 	e^ = Entity{WorldPosition{1, 1}}
 	g_mem.character = h
 
+	test_img, img_load_err := ctx.draw_cmds.load_img(
+		"assets/textures/colored_transparent_packed.png",
+	)
+	if img_load_err != .NoError {
+		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
+	}
+	g_mem.test_img = test_img
+
 }
 
 @(export)
@@ -102,10 +111,20 @@ game_draw :: proc() {
 	camera.rotation = 0
 	camera.zoom = 1
 
-	draw_cmds.begin_drawing_2d(camera)
-	defer draw_cmds.end_drawing_2d()
+	// draw_cmds.begin_drawing_2d(camera)
+	// defer draw_cmds.end_drawing_2d()
 
-	draw_cmds.draw_grid(100, 50)
+	// draw_cmds.draw_grid(100, 50)
+
+	atlas_example := AtlasImage {
+		g_mem.test_img.handle,
+		Vector2{},
+		Vector2{16, 16},
+		Vector2{},
+		Rectangle{Vector2{16, 16}, Vector2{16, 16}, 0.0},
+		0,
+	}
+	draw_cmds.draw_img(atlas_example, WHITE)
 }
 
 
