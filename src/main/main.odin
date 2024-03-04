@@ -50,7 +50,7 @@ main :: proc() {
 	rl_platform.new_platform_storage()
 	defer rl_platform.free_platform_storage()
 
-	rl.InitWindow(800, 600, "Breakit")
+	rl.InitWindow(800, 600, "7DRL")
 	rl.SetTargetFPS(FPS)
 	defer rl.CloseWindow()
 
@@ -73,6 +73,7 @@ main :: proc() {
 	game_api.init()
 	game_api.setup()
 
+	rl.HideCursor()
 	for {
 		defer {
 			clear(&ctx.events)
