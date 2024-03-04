@@ -38,11 +38,15 @@ Entities :: DataPool(1024, Entity, EntityHandle)
 GameMemory :: struct {
 	scene_size: Vector2,
 
-	// Games
+	// Assets
 	fonts:      GameFonts,
 	atlas_list: GameAtlasList,
+
+
+	// Game
 	entities:   Entities,
 	character:  EntityHandle,
+	camera:     Camera2D,
 }
 
 
@@ -66,6 +70,14 @@ game_setup :: proc() {
 
 	g_mem.scene_size.x = 800
 	g_mem.scene_size.y = 600
+
+	camera := Camera2D{}
+	camera.target = Vector2{}
+	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16}
+	camera.rotation = 0
+	camera.zoom = 3.5
+
+	g_mem.camera = camera
 
 	e, h, is_ok := data_pool_add_empty(&g_mem.entities)
 	if !is_ok {
@@ -97,7 +109,10 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
+	dt := input.frame_query_delta(frame_input)
 	character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+	camera := &g_mem.camera
+
 	if character == nil {
 		panic("The player should always be in the game")
 	}
@@ -113,7 +128,11 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if input.was_just_released(frame_input, .S) {
 		character.position += Vector2{0, 16}
 	}
+	camera_dist := math.length2(character.position - camera.target)
 
+	if camera_dist > 100 {
+		camera.target = math.lerp(camera.target, character.position, 2 * dt)
+	}
 
 	return ctx.cmds.should_close_game()
 }
@@ -124,13 +143,7 @@ game_draw :: proc() {
 	draw_cmds := &ctx.draw_cmds
 	draw_cmds.clear(BLACK)
 
-	camera := Camera2D{}
-	camera.target = Vector2{}
-	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16}
-	camera.rotation = 0
-	camera.zoom = 3.5
-
-	draw_cmds.begin_drawing_2d(camera)
+	draw_cmds.begin_drawing_2d(game.camera)
 	defer draw_cmds.end_drawing_2d()
 
 	entity_iter := data_pool_new_iter(&game.entities)
