@@ -1,5 +1,6 @@
 package game
 
+
 import sa "core:container/small_array"
 import "core:fmt"
 import "core:io"
@@ -13,8 +14,6 @@ import mu "../microui"
 
 
 WorldPosition :: [2]u32
-
-
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
@@ -25,21 +24,20 @@ GameFonts :: struct {
 
 EntityHandle :: distinct Handle
 Entity :: struct {
-	position: WorldPosition,
+	position: Vector2,
+	img_type: ImageType,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
 
 GameMemory :: struct {
-	scene_size:        Vector2,
-	tile_world_width:  u32,
-	tile_world_height: u32,
+	scene_size: Vector2,
 
 	// Games
-	fonts:             GameFonts,
-	entities:          Entities,
-	character:         EntityHandle,
-	test_img:          Image,
+	fonts:      GameFonts,
+	entities:   Entities,
+	character:  EntityHandle,
+	test_img:   Image,
 }
 
 
@@ -63,15 +61,13 @@ game_setup :: proc() {
 
 	g_mem.scene_size.x = 800
 	g_mem.scene_size.y = 600
-	g_mem.tile_world_width = 80
-	g_mem.tile_world_height = 60
 
 	e, h, is_ok := data_pool_add_empty(&g_mem.entities)
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{WorldPosition{1, 1}}
-	g_mem.character = h
+	// e^ = Entity{WorldPosition{1, 1}}
+	// g_mem.character = h
 
 	test_img, img_load_err := ctx.draw_cmds.load_img(
 		"assets/textures/colored_transparent_packed.png",
@@ -91,10 +87,7 @@ game_update_context :: proc(new_ctx: ^Context) {
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if input.is_pressed(frame_input, .D) {
-		a := data_pool_get_ptr(&g_mem.entities, g_mem.character)
-		if a != nil {
-			a.position += WorldPosition{1, 0}
-		}
+		// a := data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	}
 	return ctx.cmds.should_close_game()
 }
@@ -109,21 +102,14 @@ game_draw :: proc() {
 	camera.target = Vector2{}
 	camera.offset = g_mem.scene_size / 2
 	camera.rotation = 0
-	camera.zoom = 1
+	camera.zoom = 3
 
-	// draw_cmds.begin_drawing_2d(camera)
-	// defer draw_cmds.end_drawing_2d()
+	example_pc := Entity{Vector2{}, .Man}
 
-	// draw_cmds.draw_grid(100, 50)
+	draw_cmds.begin_drawing_2d(camera)
+	defer draw_cmds.end_drawing_2d()
 
-	atlas_example := AtlasImage {
-		g_mem.test_img.handle,
-		Vector2{},
-		Vector2{16, 16},
-		Vector2{},
-		Rectangle{Vector2{16, 16}, Vector2{16, 16}, 0.0},
-		0,
-	}
+	atlas_example := map_entity_to_atlas(g_mem.test_img.handle, example_pc)
 	draw_cmds.draw_img(atlas_example, WHITE)
 }
 
