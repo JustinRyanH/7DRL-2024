@@ -88,28 +88,11 @@ main :: proc() {
 
 		rl_platform.load_input(&ctx.mui)
 		if rl.IsKeyPressed(.F2) {
-			switch pb in &ctx.playback {
-			case input.Recording:
-				game_api.setup()
-				ctx.last_frame_id = 0
+			ctx.last_frame_id = 0
+			ctx.playback = input.Recording{0}
+			clear(&input_stream)
 
-				replay := input.Replay{}
-				replay.last_frame_index = len(input_stream) - 1
-				replay.active = true
-
-				ctx.playback = replay
-			case input.Replay:
-				clear(&input_stream)
-				ctx.last_frame_id = 0
-				ctx.playback = input.Recording{0}
-				game_api.setup()
-			case input.Loop:
-				delete(pb.start_index_data)
-
-				ctx.last_frame_id = 0
-				ctx.playback = input.Recording{0}
-				game_api.setup()
-			}
+			game_api.setup()
 		}
 
 		current_frame: input.FrameInput
@@ -120,24 +103,11 @@ main :: proc() {
 		switch pb in &ctx.playback {
 		case input.Recording:
 			add_frame()
-
 			current_frame, err = get_current_frame(pb.index)
 		case input.Loop:
-			switch pb.state {
-			case .PlayingToStartIndex:
-				current_frame = loop_fast_forward(&pb, game_api)
-
-				if pb.index == pb.start_index {
-					loop_load_frame_data(&pb, game_api)
-				}
-			case .Looping:
-				current_frame, err = get_current_frame(pb.index)
-				if err != nil {
-					panic(fmt.tprintf("Frame Err: %v", err))
-				}
-			}
+			panic("Loop not Implemented")
 		case input.Replay:
-			current_frame, err = get_current_frame(pb.index)
+			panic("Replay not Implemented")
 		}
 		if err != nil {
 			fmt.printf("Error: %v\n", err)
@@ -164,69 +134,13 @@ main :: proc() {
 		}
 
 
-		for ctx_evt in ctx.events {
-			switch evt in ctx_evt {
-			case game.StepEvent:
-				#partial switch pb in &ctx.playback {
-				case input.Replay:
-					pb.index += 1
-				case input.Loop:
-					pb.index += 1
-				}
-
-			case game.Resume:
-				loop, is_loop := ctx.playback.(input.Loop)
-				if is_loop {
-					rp := input.Replay{}
-					rp.index = loop.index
-					rp.active = loop.active
-					rp.last_frame_index = len(input_stream) - 1
-					ctx.playback = rp
-				}
-			case game.BeginLoop:
-				game_api.setup()
-
-				loop := input.Loop{}
-				loop.last_frame_index = len(input_stream) - 1
-				loop.start_index = evt.start_idx
-				loop.end_index = evt.end_idx
-				loop.state = .PlayingToStartIndex
-				pb, ok := &ctx.playback.(input.Replay)
-				if ok {
-					loop.active = pb.active
-				}
-				lp, lp_ok := &ctx.playback.(input.Loop)
-				if lp_ok {
-					loop.active = lp.active
-				}
-
-				ctx.playback = loop
-				ctx.last_frame_id = 0
-			}
-
-		}
-
 		switch pb in &ctx.playback {
 		case input.Recording:
 			pb.index += 1
 		case input.Loop:
-			if pb.state == .Looping {
-				if pb.active {
-					pb.index += 1
-				}
-				if pb.index > pb.end_index {
-					loop_return_to_start_of_loop(&pb, game_api)
-				}
-			}
+			panic("Loop Not Implemented")
 		case input.Replay:
-			if pb.active {
-
-				pb.index += 1
-			}
-			if pb.index >= len(input_stream) {
-				pb.index = 0
-				game_api.setup()
-			}
+			panic("Replay Not Implemented")
 		}
 	}
 
