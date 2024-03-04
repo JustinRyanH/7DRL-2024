@@ -23,20 +23,15 @@ GameFonts :: struct {
 	kenney_future: Font,
 }
 
-Character :: struct {
-	position: WorldPosition,
-}
-
 EntityHandle :: distinct Handle
-Entity :: union {
-	Character,
+Entity :: struct {
+	position: WorldPosition,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
 
 GameMemory :: struct {
-	scene_width:       f32,
-	scene_height:      f32,
+	scene_size:        Vector2,
 	tile_world_width:  u32,
 	tile_world_height: u32,
 
@@ -65,16 +60,16 @@ game_setup :: proc() {
 	// We're doing hard reset. This will clear out any lingering handles between frame
 	g_mem^ = GameMemory{}
 
-	g_mem.scene_width = 800
-	g_mem.scene_height = 600
-	g_mem.tile_world_height = 80
-	g_mem.tile_world_width = 60
+	g_mem.scene_size.x = 800
+	g_mem.scene_size.y = 600
+	g_mem.tile_world_width = 80
+	g_mem.tile_world_height = 60
 
 	e, h, is_ok := data_pool_add_empty(&g_mem.entities)
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Character{WorldPosition{1, 1}}
+	e^ = Entity{WorldPosition{1, 1}}
 	g_mem.character = h
 
 }
@@ -86,7 +81,11 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
-	if input.is_pressed(.D) {
+	if input.is_pressed(frame_input, .D) {
+		a := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+		if a != nil {
+			a.position += WorldPosition{1, 0}
+		}
 	}
 	return ctx.cmds.should_close_game()
 }
@@ -94,30 +93,19 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 @(export)
 game_draw :: proc() {
 	game := g_mem
-	width, height := g_mem.scene_width, g_mem.scene_height
 	draw_cmds := &ctx.draw_cmds
 	draw_cmds.clear(BLACK)
 
+	camera := Camera2D{}
+	camera.target = Vector2{}
+	camera.offset = g_mem.scene_size / 2
+	camera.rotation = 0
+	camera.zoom = 1
 
-	a, found := data_pool_get(&g_mem.entities, g_mem.character)
-	if found {
-		character, ok := a.(Character)
-		if ok {
-			size := Vector2{10, 10}
+	draw_cmds.begin_drawing_2d(camera)
+	defer draw_cmds.end_drawing_2d()
 
-			scale_x, scale_y :=
-				g_mem.scene_width /
-				cast(f32)g_mem.tile_world_width,
-				g_mem.scene_height /
-				cast(f32)g_mem.tile_world_height
-
-			p := Vector2{cast(f32)character.position.x, cast(f32)character.position.y}
-			real_p := p * Vector2{scale_x, scale_y}
-
-			draw_cmds.draw_shape(Rectangle{real_p, size, 0}, RED)
-
-		}
-	}
+	draw_cmds.draw_grid(100, 50)
 }
 
 

@@ -226,6 +226,7 @@ setup_raylib_draw_cmds :: proc(draw: ^game.PlatformDrawCommands) {
 	draw.clear = raylib_clear_background
 	draw.draw_text = raylib_draw_text
 	draw.draw_shape = raylib_draw_shape
+	draw.draw_grid = raylib_draw_grid
 
 	draw.text.load_font = raylib_load_font
 	draw.text.unload_font = raylib_unload_font
@@ -302,6 +303,17 @@ raylib_draw_text_ex :: proc(
 		return .NoError
 	}
 	return .FontNotFound
+}
+
+raylib_draw_grid :: proc(slices: int, spacing: f32) {
+	using rl
+	rlPushMatrix()
+	defer rlPopMatrix()
+
+	// TODO: Figure out what this 25 * 50 is for
+	rlTranslatef(0, 25 * 50, 0)
+	rlRotatef(90, 1, 0, 0)
+	DrawGrid(cast(i32)slices, spacing)
 }
 
 raylib_measure_text :: proc(

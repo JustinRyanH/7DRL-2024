@@ -89,5 +89,6 @@ PlatformDrawCommands :: struct {
 	clear:            proc(color: Color),
 	draw_text:        proc(msg: cstring, x, y: i32, font_size: i32, color: Color),
 	draw_shape:       proc(shape: Shape, color: Color),
+	draw_grid:        proc(slices: int, spacing: f32),
 	text:             TextCommands,
 }
