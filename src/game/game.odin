@@ -30,6 +30,7 @@ EntityHandle :: distinct Handle
 Entity :: struct {
 	position: Vector2,
 	img_type: ImageType,
+	color:    Color,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
@@ -70,8 +71,14 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{Vector2{}, .Man}
+	e^ = Entity{Vector2{}, .Man, WHITE}
 	g_mem.character = h
+
+	goblin_pos := [4]Vector2{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
+	for pos in goblin_pos {
+		data_pool_add(&g_mem.entities, Entity{pos * 16, .Goblin, GREEN})
+	}
+
 
 	transparent_color, img_load_err := ctx.draw_cmds.load_img(
 		"assets/textures/colored_transparent_packed.png",
@@ -129,7 +136,7 @@ game_draw :: proc() {
 	entity_iter := data_pool_new_iter(&game.entities)
 	for entity in data_pool_iter(&entity_iter) {
 		atlas_example := map_entity_to_atlas(g_mem.atlas_list.transparent_color, entity)
-		draw_cmds.draw_img(atlas_example, WHITE)
+		draw_cmds.draw_img(atlas_example, entity.color)
 	}
 }
 
