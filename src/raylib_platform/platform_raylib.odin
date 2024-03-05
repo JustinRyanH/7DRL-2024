@@ -245,6 +245,8 @@ setup_raylib_draw_cmds :: proc(draw: ^game.PlatformDrawCommands) {
 
 	draw.camera.begin_drawing_2d = raylib_begin_drawing_2d
 	draw.camera.end_drawing_2d = raylib_end_drawing_2d
+	draw.camera.screen_to_world_2d = raylib_camera_screen_to_world_2d
+	draw.camera.world_to_sreen_2d = raylib_camera_world_to_sreen_2d
 }
 
 @(private)
@@ -280,6 +282,19 @@ raylib_begin_drawing_2d :: proc(camera: game.Camera2D) {
 
 raylib_end_drawing_2d :: proc() {
 	rl.EndMode2D()
+}
+
+raylib_camera_screen_to_world_2d :: proc(
+	camera: game.Camera2D,
+	screen_pos: game.Vector2,
+) -> game.Vector2 {
+	return rl.GetScreenToWorld2D(screen_pos, cast(rl.Camera2D)camera)
+}
+raylib_camera_world_to_sreen_2d :: proc(
+	camera: game.Camera2D,
+	world_pos: game.Vector2,
+) -> game.Vector2 {
+	return rl.GetWorldToScreen2D(world_pos, cast(rl.Camera2D)camera)
 }
 
 raylib_load_font :: proc(path: cstring) -> (font: game.Font) {

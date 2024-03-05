@@ -92,8 +92,10 @@ TextCommands :: struct {
 }
 
 CameraCommands :: struct {
-	begin_drawing_2d: proc(camera: Camera2D),
-	end_drawing_2d:   proc(),
+	begin_drawing_2d:   proc(camera: Camera2D),
+	end_drawing_2d:     proc(),
+	screen_to_world_2d: proc(camera: Camera2D, screen_pos: Vector2) -> Vector2,
+	world_to_sreen_2d:  proc(camera: Camera2D, world_pos: Vector2) -> Vector2,
 }
 
 

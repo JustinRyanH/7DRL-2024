@@ -173,11 +173,12 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 game_draw :: proc() {
 	game := g_mem
 	draw_cmds := &ctx.draw_cmds
+	draw_camera := &ctx.draw_cmds.camera
 	draw_cmds.clear(BLACK)
 
 	{
-		draw_cmds.camera.begin_drawing_2d(game.camera)
-		defer draw_cmds.camera.end_drawing_2d()
+		draw_camera.begin_drawing_2d(game.camera)
+		defer draw_camera.end_drawing_2d()
 
 		draw_cmds.draw_grid(100, 16, Vector2{4, 4} * 50)
 
