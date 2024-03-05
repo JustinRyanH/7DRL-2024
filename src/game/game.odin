@@ -13,12 +13,12 @@ import "./input"
 import mu "../microui"
 
 
-WorldPosition :: [2]u32
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
 MovementCell :: struct {
-	point: Vector2,
+	point:  Vector2,
+	offset: [2]int,
 }
 
 GameFonts :: struct {
@@ -137,7 +137,10 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			}
 			append(
 				&movement_grid,
-				MovementCell{Vector2{16 * cast(f32)x, 16 * cast(f32)y} + character.position},
+				MovementCell {
+					Vector2{16 * cast(f32)x, 16 * cast(f32)y} + character.position,
+					{x, y},
+				},
 			)
 		}
 	}
