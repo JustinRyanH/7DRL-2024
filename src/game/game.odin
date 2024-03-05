@@ -12,6 +12,7 @@ import "./input"
 
 import mu "../microui"
 
+WorldPosition :: distinct [2]int
 
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
@@ -22,8 +23,7 @@ MovementCell :: struct {
 }
 
 SearchNode :: struct {
-	id:         u64,
-	pos:        [2]f32,
+	pos:        WorldPosition,
 	g:          f32,
 	h:          f32,
 	connection: ^SearchNode,
@@ -155,14 +155,13 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 
 	start := SearchNode{}
 	start.pos = {-3, 0}
-	start.id = generate_u64_from_string(fmt.tprintf("%v", start.pos))
 
 	target := SearchNode{}
 
-	to_search := make(map[u64]SearchNode, 32, context.temp_allocator)
-	processed := make(map[u64]SearchNode, 32, context.temp_allocator)
+	to_search := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
+	processed := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
 
-	to_search[start.id] = start
+	to_search[start.pos] = start
 
 	count := 0
 	for len(to_search) > 0 {
@@ -178,33 +177,39 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			}
 		}
 
-		fmt.println("current: ", current)
 		if current.pos == target.pos {
+			path := make([dynamic]WorldPosition, 0, 32, context.temp_allocator)
+			next := current.connection
+			for next != nil {
+				append(&path, next.pos)
+				next = next.connection
+			}
+			fmt.println("path", path)
 			panic("found path")
 		}
 
-		processed[current.id] = current
-		delete_key(&to_search, current.id)
+		processed[current.pos] = current
+		delete_key(&to_search, current.pos)
 
 		neighbors := get_neighbors(current)
 		for neighbor in &neighbors {
 			count += 1
-			neighbor.h = math.length(neighbor.pos)
-			if neighbor.id in processed {
+			neighbor.h = math.length(world_pos_to_vec(neighbor.pos))
+			if neighbor.pos in processed {
 				continue
 			}
 
-			in_search := neighbor.id in to_search
+			in_search := neighbor.pos in to_search
 			cost_to_neighbor := current.g + 1
 
 
 			if !in_search || cost_to_neighbor < neighbor.g {
-				neighbor.connection = &current
+				neighbor.connection = &processed[current.pos]
 				neighbor.g = cost_to_neighbor
 
 				if !in_search {
-					neighbor.h = math.length(neighbor.pos)
-					to_search[neighbor.id] = neighbor
+					neighbor.h = math.length(world_pos_to_vec(neighbor.pos))
+					to_search[neighbor.pos] = neighbor
 				}
 			}
 		}
@@ -315,14 +320,17 @@ draw_mouse :: proc() {
 
 }
 
+world_pos_to_vec :: #force_inline proc(pos: WorldPosition) -> Vector2 {
+	return Vector2{cast(f32)pos.x, cast(f32)pos.y}
+}
+
 
 get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
-	offsets := [4]Vector2{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
+	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
 	nodes := [4]SearchNode{}
 
 	for node, i in &nodes {
 		node.pos = search_node.pos + offsets[i]
-		node.id = generate_u64_from_string(fmt.tprintf("%v", node.pos))
 		node.g = search_node.g + 1
 	}
 	return nodes
