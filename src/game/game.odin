@@ -177,8 +177,6 @@ game_draw :: proc() {
 	draw_cmds := &ctx.draw_cmds
 	draw_cmds.clear(BLACK)
 
-	mouse_pos := input.mouse_position(g_input)
-
 	{
 		draw_cmds.begin_drawing_2d(game.camera)
 		defer draw_cmds.end_drawing_2d()
@@ -199,12 +197,7 @@ game_draw :: proc() {
 		}
 	}
 
-	mouse_atl := AtlasImage{}
-	mouse_atl.image = g_mem.atlas_list.transparent_color
-	mouse_atl.pos = mouse_pos
-	mouse_atl.size = Vector2{32, 32}
-	mouse_atl.src = Rectangle{Vector2{38, 10} * 16, Vector2{16, 16}, 0}
-	draw_cmds.draw_img(mouse_atl, WHITE)
+	draw_mouse()
 }
 
 @(export)
@@ -237,4 +230,17 @@ game_load_from_stream :: proc(stream: io.Stream) -> io.Error {
 @(export)
 game_mem_size :: proc() -> int {
 	return size_of(GameMemory)
+}
+
+draw_mouse :: proc() {
+	draw_cmds := &ctx.draw_cmds
+
+	mouse_pos := input.mouse_position(g_input)
+	mouse_atl := AtlasImage{}
+	mouse_atl.image = g_mem.atlas_list.transparent_color
+	mouse_atl.pos = mouse_pos
+	mouse_atl.size = Vector2{32, 32}
+	mouse_atl.src = Rectangle{Vector2{38, 10} * 16, Vector2{16, 16}, 0}
+	draw_cmds.draw_img(mouse_atl, WHITE)
+
 }
