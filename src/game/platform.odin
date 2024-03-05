@@ -91,23 +91,27 @@ TextCommands :: struct {
 	) -> PlatformCommandError,
 }
 
+CameraCommands :: struct {
+	begin_drawing_2d: proc(camera: Camera2D),
+	end_drawing_2d:   proc(),
+}
+
 
 PlatformCommands :: struct {
 	should_close_game: proc() -> bool,
 }
 
 PlatformDrawCommands :: struct {
-	begin_drawing:    proc(),
-	begin_drawing_2d: proc(camera: Camera2D),
-	draw_mui:         proc(mui: ^mu.Context),
-	end_drawing_2d:   proc(),
-	end_drawing:      proc(),
-	clear:            proc(color: Color),
-	draw_text:        proc(msg: cstring, x, y: i32, font_size: i32, color: Color),
-	draw_shape:       proc(shape: Shape, color: Color),
-	load_img:         proc(file: cstring) -> (Image, PlatformCommandError),
-	unload_img:       proc(img: ImageHandle),
-	draw_img:         proc(image: AtlasImage, color: Color) -> PlatformCommandError,
-	draw_grid:        proc(slices: int, spacing: f32, offset: Vector2),
-	text:             TextCommands,
+	begin_drawing: proc(),
+	draw_mui:      proc(mui: ^mu.Context),
+	end_drawing:   proc(),
+	clear:         proc(color: Color),
+	draw_text:     proc(msg: cstring, x, y: i32, font_size: i32, color: Color),
+	draw_shape:    proc(shape: Shape, color: Color),
+	load_img:      proc(file: cstring) -> (Image, PlatformCommandError),
+	unload_img:    proc(img: ImageHandle),
+	draw_img:      proc(image: AtlasImage, color: Color) -> PlatformCommandError,
+	draw_grid:     proc(slices: int, spacing: f32, offset: Vector2),
+	text:          TextCommands,
+	camera:        CameraCommands,
 }

@@ -227,10 +227,8 @@ setup_raylib_platform :: proc(cmds: ^game.PlatformCommands) {
 @(private)
 setup_raylib_draw_cmds :: proc(draw: ^game.PlatformDrawCommands) {
 	draw.begin_drawing = cast(proc())(rl.BeginDrawing)
-	draw.begin_drawing_2d = raylib_begin_drawing_2d
 	draw.draw_mui = render_mui
 	draw.end_drawing = cast(proc())(rl.EndDrawing)
-	draw.end_drawing_2d = raylib_end_drawing_2d
 	draw.clear = raylib_clear_background
 	draw.draw_text = raylib_draw_text
 	draw.draw_shape = raylib_draw_shape
@@ -244,6 +242,9 @@ setup_raylib_draw_cmds :: proc(draw: ^game.PlatformDrawCommands) {
 	draw.text.unload_font = raylib_unload_font
 	draw.text.measure_text = raylib_measure_text
 	draw.text.draw = raylib_draw_text_ex
+
+	draw.camera.begin_drawing_2d = raylib_begin_drawing_2d
+	draw.camera.end_drawing_2d = raylib_end_drawing_2d
 }
 
 @(private)

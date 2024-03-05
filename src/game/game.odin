@@ -176,8 +176,8 @@ game_draw :: proc() {
 	draw_cmds.clear(BLACK)
 
 	{
-		draw_cmds.begin_drawing_2d(game.camera)
-		defer draw_cmds.end_drawing_2d()
+		draw_cmds.camera.begin_drawing_2d(game.camera)
+		defer draw_cmds.camera.end_drawing_2d()
 
 		draw_cmds.draw_grid(100, 16, Vector2{4, 4} * 50)
 
