@@ -147,6 +147,8 @@ game_draw :: proc() {
 		draw_cmds.begin_drawing_2d(game.camera)
 		defer draw_cmds.end_drawing_2d()
 
+		draw_cmds.draw_grid(100, 16, Vector2{4, 4} * 50)
+
 		entity_iter := data_pool_new_iter(&game.entities)
 		for entity in data_pool_iter(&entity_iter) {
 			atlas_example := map_entity_to_atlas(g_mem.atlas_list.transparent_color, entity)
@@ -154,7 +156,6 @@ game_draw :: proc() {
 		}
 	}
 }
-
 
 @(export)
 game_shutdown :: proc() {

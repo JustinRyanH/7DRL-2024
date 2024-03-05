@@ -322,13 +322,12 @@ raylib_draw_text_ex :: proc(
 	return .FontNotFound
 }
 
-raylib_draw_grid :: proc(slices: int, spacing: f32) {
+raylib_draw_grid :: proc(slices: int, spacing: f32, offset: math.Vector2f32) {
 	using rl
 	rlPushMatrix()
 	defer rlPopMatrix()
 
-	// TODO: Figure out what this 25 * 50 is for
-	rlTranslatef(0, 25 * 50, 0)
+	rlTranslatef(offset.x, offset.y, 0)
 	rlRotatef(90, 1, 0, 0)
 	DrawGrid(cast(i32)slices, spacing)
 }

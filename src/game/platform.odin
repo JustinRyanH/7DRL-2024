@@ -108,6 +108,6 @@ PlatformDrawCommands :: struct {
 	load_img:         proc(file: cstring) -> (Image, PlatformCommandError),
 	unload_img:       proc(img: ImageHandle),
 	draw_img:         proc(image: AtlasImage, color: Color) -> PlatformCommandError,
-	draw_grid:        proc(slices: int, spacing: f32),
+	draw_grid:        proc(slices: int, spacing: f32, offset: Vector2),
 	text:             TextCommands,
 }
