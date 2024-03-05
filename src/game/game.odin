@@ -24,6 +24,7 @@ GameFonts :: struct {
 
 GameAtlasList :: struct {
 	transparent_color: ImageHandle,
+	trail:             ImageHandle,
 }
 
 EntityHandle :: distinct Handle
@@ -91,14 +92,17 @@ game_setup :: proc() {
 		data_pool_add(&g_mem.entities, Entity{pos * 16, .Goblin, GREEN})
 	}
 
-
-	transparent_color, img_load_err := ctx.draw_cmds.load_img(
-		"assets/textures/colored_transparent_packed.png",
-	)
+	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
 	if img_load_err != .NoError {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
 	}
-	g_mem.atlas_list.transparent_color = transparent_color.handle
+	g_mem.atlas_list.transparent_color = image.handle
+
+	image, img_load_err = ctx.draw_cmds.load_img("assets/textures/kenny_trail.png")
+	if img_load_err != .NoError {
+		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
+	}
+	g_mem.atlas_list.trail = image.handle
 
 }
 
