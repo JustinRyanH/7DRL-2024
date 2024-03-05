@@ -128,7 +128,18 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if character == nil {
 		panic("The player should always be in the game")
 	}
-	append(&movement_grid, MovementCell{Vector2{16, 0} + character.position})
+	for x in -6 ..= 6 {
+		for y in -6 ..= 6 {
+			if x == 0 && y == 0 {
+				continue
+			}
+			append(
+				&movement_grid,
+				MovementCell{Vector2{16 * cast(f32)x, 16 * cast(f32)y} + character.position},
+			)
+		}
+	}
+
 
 	if input.was_just_released(frame_input, .D) {
 		character.position += Vector2{16, 0}
@@ -173,7 +184,7 @@ game_draw :: proc() {
 		for cell in movement_grid {
 			draw_cmds.draw_shape(
 				Rectangle{cell.point, Vector2{15, 15}, 0.0},
-				Color{.2, .24, .2, 0.3},
+				Color{.2, .21, .28, 0.3},
 			)
 		}
 
