@@ -153,71 +153,6 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 	}
 
-	start := SearchNode{}
-	start.pos = {-3, 0}
-
-	target := SearchNode{}
-
-	to_search := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
-	processed := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
-
-	to_search[start.pos] = start
-
-	count := 0
-	for len(to_search) > 0 {
-		current: SearchNode
-		current.h = max(f32)
-
-		for _, t in to_search {
-			target_f := t.h + t.g
-			current_f := current.h + current.g
-
-			if (target_f < current_f || target_f == current_f && t.h < current.h) {
-				current = t
-			}
-		}
-
-		if current.pos == target.pos {
-			path := make([dynamic]WorldPosition, 0, 32, context.temp_allocator)
-			next := current.connection
-			for next != nil {
-				append(&path, next.pos)
-				next = next.connection
-			}
-			fmt.println("path", path)
-			panic("found path")
-		}
-
-		processed[current.pos] = current
-		delete_key(&to_search, current.pos)
-
-		neighbors := get_neighbors(current)
-		for neighbor in &neighbors {
-			count += 1
-			neighbor.h = math.length(world_pos_to_vec(neighbor.pos))
-			if neighbor.pos in processed {
-				continue
-			}
-
-			in_search := neighbor.pos in to_search
-			cost_to_neighbor := current.g + 1
-
-
-			if !in_search || cost_to_neighbor < neighbor.g {
-				neighbor.connection = &processed[current.pos]
-				neighbor.g = cost_to_neighbor
-
-				if !in_search {
-					neighbor.h = math.length(world_pos_to_vec(neighbor.pos))
-					to_search[neighbor.pos] = neighbor
-				}
-			}
-		}
-		count += 1
-	}
-
-	assert(false, "Crash here")
-
 	if input.was_just_released(frame_input, .D) {
 		character.position += Vector2{16, 0}
 	}
@@ -334,4 +269,69 @@ get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
 		node.g = search_node.g + 1
 	}
 	return nodes
+}
+
+max_walk_count := 128
+
+find_path :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
+	start := SearchNode{}
+	start.pos = src_pos
+
+	target := SearchNode{}
+	target.pos = t_pos
+
+	to_search := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
+	to_search[start.pos] = start
+
+	processed := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
+
+	for i := 0; i < max_walk_count; i += 1 {
+		current: SearchNode
+		current.h = max(f32)
+
+		for _, t in to_search {
+			target_f := t.h + t.g
+			current_f := current.h + current.g
+
+			if (target_f < current_f || target_f == current_f && t.h < current.h) {
+				current = t
+			}
+		}
+
+		processed[current.pos] = current
+		delete_key(&to_search, current.pos)
+
+		if current.pos == target.pos {
+			path := make([dynamic]WorldPosition, 0, 32, context.temp_allocator)
+			next := current.connection
+			for next != nil {
+				append(&path, next.pos)
+				next = next.connection
+			}
+			return path[:]
+		}
+
+		neighbors := get_neighbors(current)
+		for neighbor in &neighbors {
+			neighbor.h = math.length(world_pos_to_vec(neighbor.pos))
+			if neighbor.pos in processed {
+				continue
+			}
+
+			in_search := neighbor.pos in to_search
+			cost_to_neighbor := current.g + 1
+
+
+			if !in_search || cost_to_neighbor < neighbor.g {
+				neighbor.connection = &processed[current.pos]
+				neighbor.g = cost_to_neighbor
+
+				if !in_search {
+					to_search[neighbor.pos] = neighbor
+				}
+			}
+		}
+	}
+
+	return []WorldPosition{}
 }
