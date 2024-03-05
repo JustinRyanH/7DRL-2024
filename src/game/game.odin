@@ -18,7 +18,7 @@ KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
 MovementCell :: struct {
-	point:  Vector2,
+	point:  WorldPosition,
 	offset: [2]int,
 }
 
@@ -143,13 +143,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			if x == 0 && y == 0 {
 				continue
 			}
-			append(
-				&movement_grid,
-				MovementCell {
-					Vector2{16 * cast(f32)x, 16 * cast(f32)y} + character.position,
-					{x, y},
-				},
-			)
+			append(&movement_grid, MovementCell{WorldPosition{x, y}, {x, y}})
 		}
 	}
 
@@ -195,7 +189,7 @@ game_draw :: proc() {
 
 		for cell in movement_grid {
 			draw_cmds.draw_shape(
-				Rectangle{cell.point, Vector2{15, 15}, 0.0},
+				Rectangle{world_pos_to_vec(cell.point) * 16, Vector2{8, 8}, 0.0},
 				Color{.2, .21, .28, 0.3},
 			)
 		}
