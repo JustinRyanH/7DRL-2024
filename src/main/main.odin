@@ -119,10 +119,8 @@ main :: proc() {
 			rl.BeginDrawing()
 			defer rl.EndDrawing()
 
-
 			game_api.update_ctx(ctx)
 			should_exit := game_api.update(current_frame)
-
 
 			game_api.draw()
 
