@@ -119,6 +119,8 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
+	g_input = frame_input
+
 	movement_grid = make([dynamic]MovementCell, 0, 1024, context.temp_allocator)
 
 	dt := input.frame_query_delta(frame_input)
@@ -175,6 +177,8 @@ game_draw :: proc() {
 	draw_cmds := &ctx.draw_cmds
 	draw_cmds.clear(BLACK)
 
+	mouse_pos := input.mouse_position(g_input)
+
 	{
 		draw_cmds.begin_drawing_2d(game.camera)
 		defer draw_cmds.end_drawing_2d()
@@ -194,6 +198,13 @@ game_draw :: proc() {
 			draw_cmds.draw_img(atlas_example, entity.color)
 		}
 	}
+
+	mouse_atl := AtlasImage{}
+	mouse_atl.image = g_mem.atlas_list.transparent_color
+	mouse_atl.pos = mouse_pos
+	mouse_atl.size = Vector2{32, 32}
+	mouse_atl.src = Rectangle{Vector2{38, 10} * 16, Vector2{16, 16}, 0}
+	draw_cmds.draw_img(mouse_atl, WHITE)
 }
 
 @(export)
