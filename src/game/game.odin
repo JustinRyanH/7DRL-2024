@@ -17,6 +17,10 @@ WorldPosition :: [2]u32
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
+MovementCell :: struct {
+	point: Vector2,
+}
+
 GameFonts :: struct {
 	kenney_block:  Font,
 	kenney_future: Font,
@@ -54,6 +58,8 @@ GameMemory :: struct {
 ctx: ^Context
 g_input: input.FrameInput
 g_mem: ^GameMemory
+
+movement_grid: [dynamic]MovementCell
 
 current_input :: #force_inline proc() -> input.UserInput {
 	return g_input.current_frame
@@ -113,6 +119,8 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
+	movement_grid = make([dynamic]MovementCell, 0, 1024, context.temp_allocator)
+
 	dt := input.frame_query_delta(frame_input)
 	character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	camera := &g_mem.camera
@@ -120,6 +128,8 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if character == nil {
 		panic("The player should always be in the game")
 	}
+	append(&movement_grid, MovementCell{Vector2{16, 0} + character.position})
+
 	if input.was_just_released(frame_input, .D) {
 		character.position += Vector2{16, 0}
 	}
@@ -159,6 +169,13 @@ game_draw :: proc() {
 		defer draw_cmds.end_drawing_2d()
 
 		draw_cmds.draw_grid(100, 16, Vector2{4, 4} * 50)
+
+		for cell in movement_grid {
+			draw_cmds.draw_shape(
+				Rectangle{cell.point, Vector2{15, 15}, 0.0},
+				Color{.2, .24, .2, 0.3},
+			)
+		}
 
 		entity_iter := data_pool_new_iter(&game.entities)
 		for entity in data_pool_iter(&entity_iter) {
