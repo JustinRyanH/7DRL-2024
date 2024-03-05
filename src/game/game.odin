@@ -21,6 +21,14 @@ MovementCell :: struct {
 	offset: [2]int,
 }
 
+SearchNode :: struct {
+	id:         u64,
+	pos:        [2]f32,
+	g:          f32,
+	h:          f32,
+	connection: ^SearchNode,
+}
+
 GameFonts :: struct {
 	kenney_block:  Font,
 	kenney_future: Font,
@@ -130,8 +138,8 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if character == nil {
 		panic("The player should always be in the game")
 	}
-	for x in -6 ..= 6 {
-		for y in -6 ..= 6 {
+	for x in -3 ..= 3 {
+		for y in -3 ..= 3 {
 			if x == 0 && y == 0 {
 				continue
 			}
@@ -145,6 +153,65 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 	}
 
+	start := SearchNode{}
+	start.pos = {-3, 0}
+	start.id = generate_u64_from_string(fmt.tprintf("%v", start.pos))
+
+	target := SearchNode{}
+
+	to_search := make(map[u64]SearchNode, 32, context.temp_allocator)
+	processed := make(map[u64]SearchNode, 32, context.temp_allocator)
+
+	to_search[start.id] = start
+
+	count := 0
+	for len(to_search) > 0 {
+		current: SearchNode
+		current.h = max(f32)
+
+		for _, t in to_search {
+			target_f := t.h + t.g
+			current_f := current.h + current.g
+
+			if (target_f < current_f || target_f == current_f && t.h < current.h) {
+				current = t
+			}
+		}
+
+		fmt.println("current: ", current)
+		if current.pos == target.pos {
+			panic("found path")
+		}
+
+		processed[current.id] = current
+		delete_key(&to_search, current.id)
+
+		neighbors := get_neighbors(current)
+		for neighbor in &neighbors {
+			count += 1
+			neighbor.h = math.length(neighbor.pos)
+			if neighbor.id in processed {
+				continue
+			}
+
+			in_search := neighbor.id in to_search
+			cost_to_neighbor := current.g + 1
+
+
+			if !in_search || cost_to_neighbor < neighbor.g {
+				neighbor.connection = &current
+				neighbor.g = cost_to_neighbor
+
+				if !in_search {
+					neighbor.h = math.length(neighbor.pos)
+					to_search[neighbor.id] = neighbor
+				}
+			}
+		}
+		count += 1
+	}
+
+	assert(false, "Crash here")
 
 	if input.was_just_released(frame_input, .D) {
 		character.position += Vector2{16, 0}
@@ -246,4 +313,17 @@ draw_mouse :: proc() {
 	mouse_atl.src = Rectangle{Vector2{38, 10} * 16, Vector2{16, 16}, 0}
 	draw_cmds.draw_img(mouse_atl, WHITE)
 
+}
+
+
+get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
+	offsets := [4]Vector2{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
+	nodes := [4]SearchNode{}
+
+	for node, i in &nodes {
+		node.pos = search_node.pos + offsets[i]
+		node.id = generate_u64_from_string(fmt.tprintf("%v", node.pos))
+		node.g = search_node.g + 1
+	}
+	return nodes
 }
