@@ -41,9 +41,9 @@ GameAtlasList :: struct {
 
 EntityHandle :: distinct Handle
 Entity :: struct {
-	position: Vector2,
-	img_type: ImageType,
-	color:    Color,
+	world_pos: WorldPosition,
+	img_type:  ImageType,
+	color:     Color,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
@@ -98,12 +98,12 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{Vector2{}, .Man, WHITE}
+	e^ = Entity{WorldPosition{}, .Man, WHITE}
 	g_mem.character = h
 
-	goblin_pos := [4]Vector2{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
+	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		data_pool_add(&g_mem.entities, Entity{pos * 16, .Goblin, GREEN})
+		data_pool_add(&g_mem.entities, Entity{pos, .Goblin, GREEN})
 	}
 
 	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
@@ -148,28 +148,22 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	}
 
 	if input.was_just_released(frame_input, .D) {
-		character.position += Vector2{16, 0}
+		character.world_pos += WorldPosition{1, 0}
 	}
 	if input.was_just_released(frame_input, .A) {
-		character.position -= Vector2{16, 0}
+		character.world_pos -= WorldPosition{1, 0}
 	}
 	if input.was_just_released(frame_input, .W) {
-		character.position -= Vector2{0, 16}
+		character.world_pos -= WorldPosition{0, 1}
 	}
 	if input.was_just_released(frame_input, .S) {
-		character.position += Vector2{0, 16}
+		character.world_pos += WorldPosition{0, 1}
 	}
-	camera_dist := math.length2(character.position - camera.target)
+	char_world_pos := world_pos_to_vec(character.world_pos) * 16
+	camera_dist := math.length2(char_world_pos - camera.target)
 
-	if camera_dist > 100 {
-		camera.target = math.lerp(camera.target, character.position, 2 * dt)
-	}
-
-	// Try to lock everything to same positions
-	entity_iter := data_pool_new_iter(&g_mem.entities)
-	for entity in data_pool_iter_ptr(&entity_iter) {
-		target_position := math.round(entity.position / 16) * 16
-		entity.position = target_position
+	if camera_dist > 25 {
+		camera.target = math.lerp(camera.target, char_world_pos, 2 * dt)
 	}
 
 	return ctx.cmds.should_close_game()
