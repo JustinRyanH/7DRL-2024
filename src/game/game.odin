@@ -134,6 +134,13 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		camera.target = math.lerp(camera.target, character.position, 2 * dt)
 	}
 
+	// Try to lock everything to same positions
+	entity_iter := data_pool_new_iter(&g_mem.entities)
+	for entity in data_pool_iter_ptr(&entity_iter) {
+		target_position := math.round(entity.position / 16) * 16
+		entity.position = target_position
+	}
+
 	return ctx.cmds.should_close_game()
 }
 
