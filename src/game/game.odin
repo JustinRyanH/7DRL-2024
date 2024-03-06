@@ -112,7 +112,7 @@ game_setup :: proc() {
 	}
 	g_mem.atlas_list.transparent_color = image.handle
 
-	image, img_load_err = ctx.draw_cmds.load_img("assets/textures/kenny_trail.png")
+	image, img_load_err = ctx.draw_cmds.load_img("assets/textures/kenney_trail.png")
 	if img_load_err != .NoError {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
 	}
@@ -195,13 +195,13 @@ game_draw :: proc() {
 		world_pos := world_pos_from_space_as_vec(screen_pos)
 		world_pos_int := world_pos_from_space(screen_pos)
 
-		// path := find_path_t(world_pos_int, character.world_pos)
-		// for p in path {
-		// 	draw_cmds.draw_shape(
-		// 		Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
-		// 		Color{1, 0, 0, 0.5},
-		// 	)
-		// }
+		path := find_path_t(world_pos_int, character.world_pos)
+		for p in path {
+			draw_cmds.draw_shape(
+				Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
+				Color{1, 0, 0, 0.5},
+			)
+		}
 
 		// draw_cmds.draw_shape(Rectangle{world_pos * 16, Vector2{14, 14}, 0}, Color{1, 0, 0, 0.5})
 		draw_cmds.draw_text(
@@ -282,7 +282,7 @@ world_pos_from_space_as_vec :: #force_inline proc(pos: Vector2) -> Vector2 {
 }
 
 
-get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
+get_neighbors :: proc(search_node: ^SearchNode) -> [4]SearchNode {
 	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
 	nodes := [4]SearchNode{}
 
@@ -296,67 +296,5 @@ get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
 max_walk_count := 128
 
 find_path_t :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
-	if src_pos == t_pos {
-		return []WorldPosition{}
-	}
-	start := SearchNode{}
-	start.pos = src_pos
-
-	target := SearchNode{}
-	target.pos = t_pos
-
-	to_search := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
-	to_search[start.pos] = start
-
-	processed := make(map[WorldPosition]SearchNode, 32, context.temp_allocator)
-
-	for i := 0; i < max_walk_count; i += 1 {
-		current: SearchNode
-		current.h = max(f32)
-
-		for _, t in to_search {
-			target_f := t.h + t.g
-			current_f := current.h + current.g
-
-			if (target_f < current_f || target_f == current_f && t.h < current.h) {
-				current = t
-			}
-		}
-
-		processed[current.pos] = current
-		delete_key(&to_search, current.pos)
-
-		if current.pos == target.pos {
-			path := make([dynamic]WorldPosition, 0, 32, context.temp_allocator)
-			next := current.connection
-			for next != nil {
-				fmt.println(next)
-				append(&path, next.pos)
-				next = next.connection
-			}
-			return path[:]
-		}
-
-		neighbors := get_neighbors(current)
-		for neighbor in &neighbors {
-			if neighbor.pos in processed {
-				continue
-			}
-
-			in_search := neighbor.pos in to_search
-			cost_to_neighbor := current.g + 1
-
-			if !in_search || cost_to_neighbor < neighbor.g {
-				neighbor.connection = &processed[current.pos]
-				neighbor.g = cost_to_neighbor
-
-				if !in_search {
-					neighbor.h = math.floor(math.length(world_pos_to_vec(neighbor.pos)) * 10)
-					to_search[neighbor.pos] = neighbor
-				}
-			}
-		}
-	}
-
 	return []WorldPosition{}
 }
