@@ -143,7 +143,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			if x == 0 && y == 0 {
 				continue
 			}
-			append(&movement_grid, MovementCell{WorldPosition{x, y}, {x, y}})
+			append(&movement_grid, MovementCell{character.world_pos + WorldPosition{x, y}, {x, y}})
 		}
 	}
 
@@ -188,6 +188,30 @@ game_draw :: proc() {
 				Color{.2, .21, .28, 0.3},
 			)
 		}
+
+		character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+
+		screen_pos := draw_camera.screen_to_world_2d(game.camera, input.mouse_position(g_input))
+		world_pos := world_pos_from_space_as_vec(screen_pos)
+		world_pos_int := world_pos_from_space(screen_pos)
+
+		// path := find_path_t(world_pos_int, character.world_pos)
+		// for p in path {
+		// 	draw_cmds.draw_shape(
+		// 		Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
+		// 		Color{1, 0, 0, 0.5},
+		// 	)
+		// }
+
+		// draw_cmds.draw_shape(Rectangle{world_pos * 16, Vector2{14, 14}, 0}, Color{1, 0, 0, 0.5})
+		draw_cmds.draw_text(
+			fmt.ctprintf("%v", world_pos),
+			cast(i32)screen_pos.x,
+			cast(i32)screen_pos.y + 10,
+			8,
+			RED,
+		)
+
 
 		entity_iter := data_pool_new_iter(&game.entities)
 		for entity in data_pool_iter(&entity_iter) {
@@ -248,6 +272,15 @@ world_pos_to_vec :: #force_inline proc(pos: WorldPosition) -> Vector2 {
 	return Vector2{cast(f32)pos.x, cast(f32)pos.y}
 }
 
+world_pos_from_space :: #force_inline proc(pos: Vector2) -> WorldPosition {
+	v := world_pos_from_space_as_vec(pos)
+	return WorldPosition{cast(int)v.x, cast(int)v.y}
+}
+
+world_pos_from_space_as_vec :: #force_inline proc(pos: Vector2) -> Vector2 {
+	return math.round(pos / 16)
+}
+
 
 get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
 	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
@@ -262,7 +295,10 @@ get_neighbors :: proc(search_node: SearchNode) -> [4]SearchNode {
 
 max_walk_count := 128
 
-find_path :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
+find_path_t :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
+	if src_pos == t_pos {
+		return []WorldPosition{}
+	}
 	start := SearchNode{}
 	start.pos = src_pos
 
@@ -294,6 +330,7 @@ find_path :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 			path := make([dynamic]WorldPosition, 0, 32, context.temp_allocator)
 			next := current.connection
 			for next != nil {
+				fmt.println(next)
 				append(&path, next.pos)
 				next = next.connection
 			}
@@ -302,7 +339,6 @@ find_path :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 
 		neighbors := get_neighbors(current)
 		for neighbor in &neighbors {
-			neighbor.h = math.length(world_pos_to_vec(neighbor.pos))
 			if neighbor.pos in processed {
 				continue
 			}
@@ -310,12 +346,12 @@ find_path :: proc(src_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 			in_search := neighbor.pos in to_search
 			cost_to_neighbor := current.g + 1
 
-
 			if !in_search || cost_to_neighbor < neighbor.g {
 				neighbor.connection = &processed[current.pos]
 				neighbor.g = cost_to_neighbor
 
 				if !in_search {
+					neighbor.h = math.floor(math.length(world_pos_to_vec(neighbor.pos)) * 10)
 					to_search[neighbor.pos] = neighbor
 				}
 			}
