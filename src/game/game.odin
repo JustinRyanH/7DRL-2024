@@ -26,7 +26,11 @@ SearchNode :: struct {
 	pos:        WorldPosition,
 	g:          f32,
 	h:          f32,
-	connection: ^SearchNode,
+	connection: Connection,
+}
+
+Connection :: union {
+	WorldPosition,
 }
 
 GameFonts :: struct {
@@ -100,7 +104,6 @@ game_setup :: proc() {
 	}
 	e^ = Entity{WorldPosition{}, .Man, WHITE}
 	g_mem.character = h
-	find_path_t({-7, -5}, WorldPosition{})
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
@@ -196,13 +199,13 @@ game_draw :: proc() {
 		world_pos := world_pos_from_space_as_vec(screen_pos)
 		world_pos_int := world_pos_from_space(screen_pos)
 
-		// path := find_path_t(world_pos_int, character.world_pos)
-		// for p in path {
-		// 	draw_cmds.draw_shape(
-		// 		Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
-		// 		Color{1, 0, 0, 0.5},
-		// 	)
-		// }
+		path := find_path_t(world_pos_int, character.world_pos)
+		for p in path {
+			draw_cmds.draw_shape(
+				Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
+				Color{1, 0, 0, 0.5},
+			)
+		}
 
 		// draw_cmds.draw_shape(Rectangle{world_pos * 16, Vector2{14, 14}, 0}, Color{1, 0, 0, 0.5})
 		draw_cmds.draw_text(
@@ -283,13 +286,15 @@ world_pos_from_space_as_vec :: #force_inline proc(pos: Vector2) -> Vector2 {
 }
 
 
-get_neighbors :: proc(search_node: ^SearchNode) -> [4]SearchNode {
+get_neighbors :: proc(search_node: SearchNode, target: WorldPosition) -> [4]SearchNode {
 	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
 	nodes := [4]SearchNode{}
 
 	for node, i in &nodes {
 		node.pos = search_node.pos + offsets[i]
-		node.g = max(f32)
+		node.g = search_node.g + 1
+		node.h = math.length(world_pos_to_vec(node.pos - target))
+		node.connection = search_node.pos
 	}
 	return nodes
 }
@@ -297,80 +302,72 @@ get_neighbors :: proc(search_node: ^SearchNode) -> [4]SearchNode {
 max_walk_count := 128
 
 find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
-	world_space := make(map[WorldPosition]SearchNode, 128, context.temp_allocator)
-	to_search := make(map[WorldPosition]^SearchNode, 128, context.temp_allocator)
-	processed := make(map[WorldPosition]^SearchNode, 128, context.temp_allocator)
+	to_search := make([dynamic]SearchNode, 0, 128, context.temp_allocator)
+	processed := make(map[WorldPosition]SearchNode, 128, context.temp_allocator)
 
 	start := SearchNode{}
 	start.pos = s_pos
-	start.h = math.length2(world_pos_to_vec(s_pos - t_pos))
-	world_space[start.pos] = start
+	start.h = math.length(world_pos_to_vec(s_pos - t_pos))
+	append(&to_search, start)
 
-	to_search[start.pos] = &world_space[start.pos]
 	for len(to_search) > 0 {
-		current: ^SearchNode
+		current := to_search[0]
+		current_index: int
 
-		for pos, maybe in to_search {
-			if current == nil {
-				current = maybe
-			}
-			maybe_f := maybe.g + maybe.h
-			current_f := current.g + current.h
+		for maybe, index in to_search {
+			maybe_f := get_f(maybe)
+			current_f := get_f(current)
 			if (maybe_f < current_f || maybe_f == current_f && maybe.h < current.h) {
 				current = maybe
+				current_index = index
 			}
-
 		}
-		fmt.println("current_pos", current.pos)
-		assert(current != nil, "Should always have node")
-		delete_key(&to_search, current.pos)
+
+		unordered_remove(&to_search, current_index)
 		processed[current.pos] = current
 
-
 		if current.pos == t_pos {
-			next := current.connection
-			count := 0
-			for next != nil {
-				if (next.connection != nil) {
+			path := make([dynamic]WorldPosition)
 
-					fmt.println(next, next.connection.pos, next.h + next.g)
+			count := 0
+			next := current.connection
+			for {
+				pos, is_pos := next.(WorldPosition)
+				if !is_pos {
+					return path[:]
 				}
-				if count > 50 {
-					fmt.println("Source", s_pos)
-					panic("In loop")
-				}
-				next = next.connection
-				count += 1
+				append(&path, pos)
+				next = processed[pos].connection
 			}
-			panic("Good")
+
+			panic("Found Path")
 		}
 
-		neighbors := get_neighbors(current)
+		neighbors := get_neighbors(current, t_pos)
 		for n in neighbors {
 			if n.pos in processed {
 				continue
 			}
-			if !(n.pos in world_space) {
-				n_copy := n
-				n_copy.h = math.length2(world_pos_to_vec(n.pos) - world_pos_to_vec(t_pos))
-				world_space[n.pos] = n_copy
+			found_index := -1
+			for t, index in to_search {
+				if t.pos == n.pos {
+					found_index = index
+				}
 			}
-			neighbor := &world_space[n.pos]
-
-			cost_to_neighbor :=
-				current.g + math.length(world_pos_to_vec(current.pos - neighbor.pos))
-			in_search := neighbor.pos in to_search
-
-			if !in_search || cost_to_neighbor < neighbor.g {
-				neighbor.g = cost_to_neighbor
-				neighbor.connection = current
-			}
-
-			if !in_search {
-				to_search[neighbor.pos] = neighbor
+			if found_index >= 0 {
+				existing := to_search[found_index]
+				if n.g < existing.g {
+					to_search[found_index] = n
+				}
+			} else {
+				append(&to_search, n)
 			}
 		}
 	}
 
 	return []WorldPosition{}
+}
+
+get_f :: proc(n: SearchNode) -> f32 {
+	return n.h + n.g
 }
