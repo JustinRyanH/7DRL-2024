@@ -19,8 +19,64 @@ world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest
 }
 
 world_path_finder_get_path :: proc(wpf: WorldPathfinder) -> []Step {
+	entity, found := data_pool_get(&wpf.game.entities, wpf.entity)
+	assert(found, "Programmer Error: Should never try to find a new path for non-existing entity")
+
+	start := entity.world_pos
+
+	to_search := SearchNodePQueue{}
+	start_node := SearchNode{}
+	start_node.pos = start
+	start_node.h = get_estimated_distance(start, wpf.dest)
+
+	pq.init(&to_search, search_node_less, search_node_swap, 128, context.temp_allocator)
+	processed := make(map[WorldPosition]SearchNode, 128, context.temp_allocator)
+
+	pq.push(&to_search, start_node)
+
+	for pq.len(to_search) > 0 {
+		current := pq.pop(&to_search)
+		if current.pos in processed {
+			continue
+		}
+
+		processed[current.pos] = current
+
+		if current.pos == wpf.dest {
+			path := make([dynamic]Step, context.temp_allocator)
+			append(&path, Step{current.pos, current.step_cost})
+
+			count := 0
+			next := current.connection
+			for {
+				pos, is_pos := next.(WorldPosition)
+				if !is_pos {
+					return path[:]
+				}
+				node := processed[pos]
+				append(&path, Step{pos, node.step_cost})
+				next = node.connection
+			}
+
+			assert(false, "We did not actually find a good path")
+		}
+
+		neighbors := world_path_finder_get_neighbors(wpf, current)
+		for n in neighbors {
+			if n.pos in processed {
+				continue
+			}
+			pq.push(&to_search, n)
+		}
+	}
+
 
 	return []Step{}
+}
+
+world_path_finder_get_neighbors :: proc(wpf: WorldPathfinder, node: SearchNode) -> []SearchNode {
+	return []SearchNode{}
+
 }
 
 Step :: struct {
@@ -147,4 +203,9 @@ step_total_cost :: proc(steps: []Step) -> int {
 		total += step.step_cost
 	}
 	return total
+}
+
+@(private = "file")
+get_estimated_distance :: proc(start, end: WorldPosition) -> f32 {
+	return math.floor(math.length(world_pos_to_vec(start - end)) * 10)
 }
