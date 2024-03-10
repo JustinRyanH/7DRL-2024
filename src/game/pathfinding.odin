@@ -73,7 +73,7 @@ find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []Step {
 			panic("Bad Branch")
 		}
 
-		neighbors := get_neighbors(current, t_pos)
+		neighbors := get_neighbors(current, t_pos, current.pos == s_pos)
 		for n in neighbors {
 			if n.pos in processed {
 				continue
@@ -89,27 +89,36 @@ get_f :: proc(n: SearchNode) -> f32 {
 	return n.h + n.g
 }
 
-get_neighbors :: proc(search_node: SearchNode, target: WorldPosition) -> []SearchNode {
+get_neighbors :: proc(
+	search_node: SearchNode,
+	target: WorldPosition,
+	no_extra_corner_movement: bool,
+) -> []SearchNode {
 	nodes := make([dynamic]SearchNode, 0, 4, context.temp_allocator)
 	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
 	corners := [4]WorldPosition{{-1, 1}, {1, -1}, {-1, -1}, {1, 1}}
 
 	for offset, i in &offsets {
 		node := SearchNode{}
-		node.pos = search_node.pos + offsets[i]
+		node.pos = search_node.pos + offset
 		node.g = search_node.g + 10
 		node.h = math.length(world_pos_to_vec(node.pos - target)) * 10
 		node.step_cost = 1
 		node.connection = search_node.pos
+
 		append(&nodes, node)
 	}
-	for offset, i in &offsets {
+	for offset, i in &corners {
+		cost := 1 if no_extra_corner_movement else 2
+
 		node := SearchNode{}
-		node.pos = search_node.pos + offsets[i]
-		node.g = search_node.g + 20
+		node.pos = search_node.pos + offset
+		node.g = search_node.g + cast(f32)(cost * 10)
 		node.h = math.length(world_pos_to_vec(node.pos - target)) * 10
-		node.step_cost = 1
+		node.step_cost = cost
 		node.connection = search_node.pos
+
+
 		append(&nodes, node)
 	}
 	return nodes[:]

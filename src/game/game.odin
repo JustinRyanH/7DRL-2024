@@ -185,7 +185,7 @@ game_draw :: proc() {
 		world_pos := world_pos_from_space_as_vec(screen_pos)
 		world_pos_int := world_pos_from_space(screen_pos)
 
-		path := find_path_t(world_pos_int, character.world_pos)
+		path := find_path_t(character.world_pos, world_pos_int)
 		total_cost := step_total_cost(path)
 		for step in path {
 			p := step.position
