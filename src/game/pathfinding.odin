@@ -8,6 +8,7 @@ WorldPosition :: distinct [2]int
 
 WorldPathfinder :: struct {
 	entity: EntityHandle,
+	start:  WorldPosition,
 	dest:   WorldPosition,
 	game:   ^GameMemory,
 }
@@ -16,13 +17,14 @@ world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest
 	wpf.entity = entity
 	wpf.game = g_mem
 	wpf.dest = dest
+
+	entity, found := data_pool_get(&wpf.game.entities, wpf.entity)
+	assert(found, "Programmer Error: Should never try to find a new path for non-existing entity")
+	wpf.start = entity.world_pos
 }
 
 world_path_finder_get_path :: proc(wpf: WorldPathfinder) -> []Step {
-	entity, found := data_pool_get(&wpf.game.entities, wpf.entity)
-	assert(found, "Programmer Error: Should never try to find a new path for non-existing entity")
-
-	start := entity.world_pos
+	start := wpf.start
 
 	to_search := SearchNodePQueue{}
 	start_node := SearchNode{}
