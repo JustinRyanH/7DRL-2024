@@ -89,18 +89,30 @@ get_f :: proc(n: SearchNode) -> f32 {
 	return n.h + n.g
 }
 
-get_neighbors :: proc(search_node: SearchNode, target: WorldPosition) -> [4]SearchNode {
+get_neighbors :: proc(search_node: SearchNode, target: WorldPosition) -> []SearchNode {
+	nodes := make([dynamic]SearchNode, 0, 4, context.temp_allocator)
 	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
-	nodes := [4]SearchNode{}
+	corners := [4]WorldPosition{{-1, 1}, {1, -1}, {-1, -1}, {1, 1}}
 
-	for node, i in &nodes {
+	for offset, i in &offsets {
+		node := SearchNode{}
 		node.pos = search_node.pos + offsets[i]
 		node.g = search_node.g + 10
 		node.h = math.length(world_pos_to_vec(node.pos - target)) * 10
 		node.step_cost = 1
 		node.connection = search_node.pos
+		append(&nodes, node)
 	}
-	return nodes
+	for offset, i in &offsets {
+		node := SearchNode{}
+		node.pos = search_node.pos + offsets[i]
+		node.g = search_node.g + 20
+		node.h = math.length(world_pos_to_vec(node.pos - target)) * 10
+		node.step_cost = 1
+		node.connection = search_node.pos
+		append(&nodes, node)
+	}
+	return nodes[:]
 }
 
 step_total_cost :: proc(steps: []Step) -> int {
