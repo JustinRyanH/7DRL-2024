@@ -194,11 +194,9 @@ game_draw :: proc() {
 				Color{1, 0, 0, 0.5},
 			)
 		}
-		// draw_cmds.draw_text(fmt.ctprintf("Cost %d", total_cost), )
 
-		// draw_cmds.draw_shape(Rectangle{world_pos * 16, Vector2{14, 14}, 0}, Color{1, 0, 0, 0.5})
 		draw_cmds.draw_text(
-			fmt.ctprintf("%d", total_cost),
+			fmt.ctprintf("%dft", total_cost * 5),
 			cast(i32)screen_pos.x,
 			cast(i32)screen_pos.y + 10,
 			8,
