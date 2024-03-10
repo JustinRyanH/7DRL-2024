@@ -1,6 +1,7 @@
 package game
 
 import pq "core:container/priority_queue"
+import "core:fmt"
 import math "core:math/linalg"
 
 WorldPosition :: distinct [2]int
@@ -16,32 +17,40 @@ Connection :: union {
 	WorldPosition,
 }
 
+SearchNodePQueue :: pq.Priority_Queue(SearchNode)
+
+search_node_less :: proc(a, b: SearchNode) -> bool {
+	a_f := get_f(a)
+	b_f := get_f(b)
+	return a_f < b_f || a_f == b_f && a.h < b.h
+}
+
+search_node_swap :: proc(q: []SearchNode, i, j: int) {
+	q[i], q[j] = q[j], q[i]
+}
+
 find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
-	to_search := make([dynamic]SearchNode, 0, 128, context.temp_allocator)
+	to_search := SearchNodePQueue{}
+	pq.init(&to_search, search_node_less, search_node_swap, 128, context.temp_allocator)
 	processed := make(map[WorldPosition]SearchNode, 128, context.temp_allocator)
 
 	start := SearchNode{}
 	start.pos = s_pos
 	start.h = math.length(world_pos_to_vec(s_pos - t_pos))
-	append(&to_search, start)
 
-	for len(to_search) > 0 {
-		current := to_search[0]
-		current_index: int
+	pq.push(&to_search, start)
 
-		for maybe, index in to_search {
-			maybe_f := get_f(maybe)
-			current_f := get_f(current)
-			if (maybe_f < current_f || maybe_f == current_f && maybe.h < current.h) {
-				current = maybe
-				current_index = index
-			}
+	for pq.len(to_search) > 0 {
+		current := pq.pop(&to_search)
+		if current.pos in processed {
+			continue
 		}
+		fmt.printf("%v, ", current)
 
-		unordered_remove(&to_search, current_index)
 		processed[current.pos] = current
 
 		if current.pos == t_pos {
+			fmt.println("\n")
 			path := make([dynamic]WorldPosition, context.temp_allocator)
 			append(&path, current.pos)
 
@@ -56,7 +65,7 @@ find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 				next = processed[pos].connection
 			}
 
-			panic("Found Path")
+			panic("Bad Branch")
 		}
 
 		neighbors := get_neighbors(current, t_pos)
@@ -64,20 +73,7 @@ find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 			if n.pos in processed {
 				continue
 			}
-			found_index := -1
-			for t, index in to_search {
-				if t.pos == n.pos {
-					found_index = index
-				}
-			}
-			if found_index >= 0 {
-				existing := to_search[found_index]
-				if n.g < existing.g {
-					to_search[found_index] = n
-				}
-			} else {
-				append(&to_search, n)
-			}
+			pq.push(&to_search, n)
 		}
 	}
 
@@ -94,8 +90,8 @@ get_neighbors :: proc(search_node: SearchNode, target: WorldPosition) -> [4]Sear
 
 	for node, i in &nodes {
 		node.pos = search_node.pos + offsets[i]
-		node.g = search_node.g + 1
-		node.h = math.length(world_pos_to_vec(node.pos - target))
+		node.g = search_node.g + 10
+		node.h = math.length(world_pos_to_vec(node.pos - target)) * 10
 		node.connection = search_node.pos
 	}
 	return nodes
