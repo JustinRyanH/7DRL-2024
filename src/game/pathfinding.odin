@@ -20,7 +20,7 @@ world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest
 
 	entity, found := data_pool_get(&wpf.game.entities, wpf.entity)
 	assert(found, "Programmer Error: Should never try to find a new path for non-existing entity")
-	wpf.start = entity.world_pos
+	wpf.start = entity.pos
 }
 
 world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> []Step {

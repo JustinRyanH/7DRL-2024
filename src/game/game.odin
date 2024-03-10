@@ -31,9 +31,9 @@ GameAtlasList :: struct {
 
 EntityHandle :: distinct Handle
 Entity :: struct {
-	world_pos: WorldPosition,
-	img_type:  ImageType,
-	color:     Color,
+	pos:      WorldPosition,
+	img_type: ImageType,
+	color:    Color,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
@@ -133,23 +133,23 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			if x == 0 && y == 0 {
 				continue
 			}
-			append(&movement_grid, MovementCell{character.world_pos + WorldPosition{x, y}, {x, y}})
+			append(&movement_grid, MovementCell{character.pos + WorldPosition{x, y}, {x, y}})
 		}
 	}
 
 	if input.was_just_released(frame_input, .D) {
-		character.world_pos += WorldPosition{1, 0}
+		character.pos += WorldPosition{1, 0}
 	}
 	if input.was_just_released(frame_input, .A) {
-		character.world_pos -= WorldPosition{1, 0}
+		character.pos -= WorldPosition{1, 0}
 	}
 	if input.was_just_released(frame_input, .W) {
-		character.world_pos -= WorldPosition{0, 1}
+		character.pos -= WorldPosition{0, 1}
 	}
 	if input.was_just_released(frame_input, .S) {
-		character.world_pos += WorldPosition{0, 1}
+		character.pos += WorldPosition{0, 1}
 	}
-	char_world_pos := world_pos_to_vec(character.world_pos) * 16
+	char_world_pos := world_pos_to_vec(character.pos) * 16
 	camera_dist := math.length2(char_world_pos - camera.target)
 
 	if camera_dist > 25 {
@@ -274,6 +274,5 @@ world_pos_from_space :: #force_inline proc(pos: Vector2) -> WorldPosition {
 world_pos_from_space_as_vec :: #force_inline proc(pos: Vector2) -> Vector2 {
 	return math.round(pos / 16)
 }
-
 
 max_walk_count := 128
