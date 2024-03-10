@@ -80,7 +80,7 @@ game_setup :: proc() {
 	camera.target = Vector2{}
 	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16}
 	camera.rotation = 0
-	camera.zoom = 3.5
+	camera.zoom = 2.5
 
 	g_mem.camera = camera
 
@@ -175,7 +175,7 @@ game_draw :: proc() {
 		for cell in movement_grid {
 			draw_cmds.draw_shape(
 				Rectangle{world_pos_to_vec(cell.point) * 16, Vector2{8, 8}, 0.0},
-				Color{.2, .21, .28, 0.3},
+				Color{.2, .21, .28, 0.5},
 			)
 		}
 
@@ -186,16 +186,19 @@ game_draw :: proc() {
 		world_pos_int := world_pos_from_space(screen_pos)
 
 		path := find_path_t(world_pos_int, character.world_pos)
-		for p in path {
+		total_cost := step_total_cost(path)
+		for step in path {
+			p := step.position
 			draw_cmds.draw_shape(
 				Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
 				Color{1, 0, 0, 0.5},
 			)
 		}
+		// draw_cmds.draw_text(fmt.ctprintf("Cost %d", total_cost), )
 
 		// draw_cmds.draw_shape(Rectangle{world_pos * 16, Vector2{14, 14}, 0}, Color{1, 0, 0, 0.5})
 		draw_cmds.draw_text(
-			fmt.ctprintf("%v", world_pos),
+			fmt.ctprintf("%d", total_cost),
 			cast(i32)screen_pos.x,
 			cast(i32)screen_pos.y + 10,
 			8,

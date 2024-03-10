@@ -6,10 +6,16 @@ import math "core:math/linalg"
 
 WorldPosition :: distinct [2]int
 
+Step :: struct {
+	position:  WorldPosition,
+	step_cost: int,
+}
+
 SearchNode :: struct {
 	pos:        WorldPosition,
 	g:          f32,
 	h:          f32,
+	step_cost:  int,
 	connection: Connection,
 }
 
@@ -29,7 +35,7 @@ search_node_swap :: proc(q: []SearchNode, i, j: int) {
 	q[i], q[j] = q[j], q[i]
 }
 
-find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPosition {
+find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []Step {
 	to_search := SearchNodePQueue{}
 	pq.init(&to_search, search_node_less, search_node_swap, 128, context.temp_allocator)
 	processed := make(map[WorldPosition]SearchNode, 128, context.temp_allocator)
@@ -45,14 +51,12 @@ find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 		if current.pos in processed {
 			continue
 		}
-		fmt.printf("%v, ", current)
 
 		processed[current.pos] = current
 
 		if current.pos == t_pos {
-			fmt.println("\n")
-			path := make([dynamic]WorldPosition, context.temp_allocator)
-			append(&path, current.pos)
+			path := make([dynamic]Step, context.temp_allocator)
+			append(&path, Step{current.pos, current.step_cost})
 
 			count := 0
 			next := current.connection
@@ -61,8 +65,9 @@ find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 				if !is_pos {
 					return path[:]
 				}
-				append(&path, pos)
-				next = processed[pos].connection
+				node := processed[pos]
+				append(&path, Step{pos, node.step_cost})
+				next = node.connection
 			}
 
 			panic("Bad Branch")
@@ -77,7 +82,7 @@ find_path_t :: proc(s_pos: WorldPosition, t_pos: WorldPosition) -> []WorldPositi
 		}
 	}
 
-	return []WorldPosition{}
+	return []Step{}
 }
 
 get_f :: proc(n: SearchNode) -> f32 {
@@ -92,7 +97,16 @@ get_neighbors :: proc(search_node: SearchNode, target: WorldPosition) -> [4]Sear
 		node.pos = search_node.pos + offsets[i]
 		node.g = search_node.g + 10
 		node.h = math.length(world_pos_to_vec(node.pos - target)) * 10
+		node.step_cost = 1
 		node.connection = search_node.pos
 	}
 	return nodes
+}
+
+step_total_cost :: proc(steps: []Step) -> int {
+	total: int = 0
+	for step in steps {
+		total += step.step_cost
+	}
+	return total
 }
