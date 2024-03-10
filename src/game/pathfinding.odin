@@ -5,10 +5,6 @@ import math "core:math/linalg"
 
 WorldPosition :: distinct [2]int
 
-PathfinderAlgorithm :: enum {
-	AStar,
-}
-
 SearchNode :: struct {
 	pos:        WorldPosition,
 	g:          f32,
