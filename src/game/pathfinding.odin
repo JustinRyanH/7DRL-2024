@@ -93,10 +93,9 @@ world_path_finder_get_neighbors :: proc(
 		neighbor_node := SearchNode{}
 		neighbor_node.pos = search_node.pos + pos
 		neighbor_node.g = search_node.g + 10
-		neighbor_node.h = get_estimated_distance(search_node.pos, wpf.dest)
+		neighbor_node.h = get_estimated_distance(neighbor_node.pos, wpf.dest)
 		neighbor_node.step_cost = 1
 		neighbor_node.connection = search_node.pos
-
 
 		append(&nodes, neighbor_node)
 	}
@@ -158,7 +157,7 @@ step_total_cost :: proc(steps: []Step) -> int {
 
 @(private = "file")
 get_estimated_distance :: proc(start, end: WorldPosition) -> f32 {
-	return math.floor(math.length(world_pos_to_vec(start - end)) * 10)
+	return math.length(world_pos_to_vec(start - end)) * 10
 }
 
 @(private = "file")

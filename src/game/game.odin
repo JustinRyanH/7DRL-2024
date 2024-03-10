@@ -107,7 +107,6 @@ game_setup :: proc() {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
 	}
 	g_mem.atlas_list.trail = image.handle
-
 }
 
 @(export)
@@ -199,7 +198,7 @@ game_draw :: proc() {
 		}
 
 		draw_cmds.draw_text(
-			fmt.ctprintf("%dft", total_cost * 5),
+			fmt.ctprintf("%dft", total_cost * 10),
 			cast(i32)screen_pos.x,
 			cast(i32)screen_pos.y + 10,
 			8,
