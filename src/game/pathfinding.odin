@@ -24,6 +24,9 @@ world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest
 }
 
 world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> []Step {
+	if wpf.start == wpf.dest {
+		return []Step{}
+	}
 	start := wpf.start
 
 	to_search := SearchNodePQueue{}
@@ -107,7 +110,6 @@ world_path_finder_get_neighbors :: proc(
 		neighbor_node.h = get_estimated_distance(search_node.pos, wpf.dest)
 		neighbor_node.step_cost = cost
 		neighbor_node.connection = search_node.pos
-
 
 		append(&nodes, neighbor_node)
 	}

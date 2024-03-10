@@ -275,4 +275,15 @@ world_pos_from_space_as_vec :: #force_inline proc(pos: Vector2) -> Vector2 {
 	return math.round(pos / 16)
 }
 
+// TODO: This is a gross N multiplier, we should keep a hash of entities at tiles
+game_entity_at_pos :: proc(game: ^GameMemory, pos: WorldPosition) -> EntityHandle {
+	iter := data_pool_new_iter(&game.entities)
+	for entity, handle in data_pool_iter(&iter) {
+		if entity.pos == pos {
+			return handle
+		}
+	}
+	return EntityHandle{}
+}
+
 max_walk_count := 128

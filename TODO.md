@@ -1,5 +1,6 @@
 # TODO
 
+[ ] Paths
 ## 2024-03-03
 
 [ ] Render Character on Screen
@@ -15,3 +16,4 @@ Essentially thoughts I have when developing, so I can re-read this and remind
 myself of my decisions. Basically my personal Architect of Record
 
 ### Thought List
+- I need to have multiple AStar finders, because I will need to have path finds that care about entities, and some about theres.
