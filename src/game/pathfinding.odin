@@ -78,36 +78,40 @@ world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> []Step {
 	return []Step{}
 }
 
-world_path_finder_get_neighbors :: proc(wpf: WorldPathfinder, node: SearchNode) -> []SearchNode {
+world_path_finder_get_neighbors :: proc(
+	wpf: WorldPathfinder,
+	search_node: SearchNode,
+) -> []SearchNode {
 	nodes := make([dynamic]SearchNode, 0, 4, context.temp_allocator)
 	offsets := [4]WorldPosition{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}
 	corners := [4]WorldPosition{{-1, 1}, {1, -1}, {-1, -1}, {1, 1}}
 
 	for pos, i in &offsets {
 		neighbor_node := SearchNode{}
-		neighbor_node.pos = node.pos + pos
-		neighbor_node.g = node.g + 10
-		neighbor_node.h = get_estimated_distance(node.pos, wpf.dest)
+		neighbor_node.pos = search_node.pos + pos
+		neighbor_node.g = search_node.g + 10
+		neighbor_node.h = get_estimated_distance(search_node.pos, wpf.dest)
 		neighbor_node.step_cost = 1
-		neighbor_node.connection = node.pos
+		neighbor_node.connection = search_node.pos
 
 
 		append(&nodes, neighbor_node)
 	}
 	for pos, i in &corners {
 		// Special Case PF2E rule. Only first diagnal is 5ft, rest is 10ft
-		cost := 1 if node.pos == wpf.start else 2
+		cost := 1 if search_node.pos == wpf.start else 2
 
 		neighbor_node := SearchNode{}
-		neighbor_node.pos = node.pos + pos
-		neighbor_node.g = node.g + cast(f32)(cost * 10)
-		neighbor_node.h = get_estimated_distance(node.pos, wpf.dest)
+		neighbor_node.pos = search_node.pos + pos
+		neighbor_node.g = search_node.g + cast(f32)(cost * 10)
+		neighbor_node.h = get_estimated_distance(search_node.pos, wpf.dest)
 		neighbor_node.step_cost = cost
-		neighbor_node.connection = node.pos
+		neighbor_node.connection = search_node.pos
 
 
 		append(&nodes, neighbor_node)
 	}
+
 	return nodes[:]
 
 }
