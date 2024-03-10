@@ -6,6 +6,18 @@ import math "core:math/linalg"
 
 WorldPosition :: distinct [2]int
 
+WorldPathfinder :: struct {
+	entity: EntityHandle,
+	dest:   WorldPosition,
+	game:   ^GameMemory,
+}
+
+world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest: WorldPosition) {
+	wpf.entity = entity
+	wpf.game = g_mem
+	wpf.dest = dest
+}
+
 Step :: struct {
 	position:  WorldPosition,
 	step_cost: int,
