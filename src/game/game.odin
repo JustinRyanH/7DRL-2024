@@ -188,6 +188,7 @@ game_draw :: proc() {
 		wpf := WorldPathfinder{}
 		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
 
+		path_new := world_path_finder_get_path(wpf)
 		path := find_path_t(character.world_pos, world_pos_int)
 		total_cost := step_total_cost(path)
 		for step in path {

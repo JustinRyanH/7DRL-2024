@@ -18,6 +18,11 @@ world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest
 	wpf.dest = dest
 }
 
+world_path_finder_get_path :: proc(wpf: WorldPathfinder) -> []Step {
+
+	return []Step{}
+}
+
 Step :: struct {
 	position:  WorldPosition,
 	step_cost: int,
