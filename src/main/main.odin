@@ -50,7 +50,7 @@ main :: proc() {
 	rl_platform.new_platform_storage()
 	defer rl_platform.free_platform_storage()
 
-	rl.InitWindow(800, 600, "7DRL")
+	rl.InitWindow(800, 600, "Pathlike")
 	rl.SetTargetFPS(FPS)
 	defer rl.CloseWindow()
 
