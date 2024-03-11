@@ -113,7 +113,7 @@ world_path_finder_get_neighbors :: proc(
 		neighbor_node := SearchNode{}
 		neighbor_node.pos = search_node.pos + pos
 		neighbor_node.g = search_node.g + cast(f32)(cost * 10)
-		neighbor_node.h = get_estimated_distance(search_node.pos, wpf.dest)
+		neighbor_node.h = get_estimated_distance(neighbor_node.pos, wpf.dest)
 		neighbor_node.step_cost = cost
 		neighbor_node.connection = search_node.pos
 
