@@ -127,8 +127,8 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if character == nil {
 		panic("The player should always be in the game")
 	}
-	for x in -3 ..= 3 {
-		for y in -3 ..= 3 {
+	for x in -6 ..= 6 {
+		for y in -6 ..= 6 {
 			if x == 0 && y == 0 {
 				continue
 			}
