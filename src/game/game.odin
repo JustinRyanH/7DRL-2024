@@ -287,4 +287,17 @@ game_entity_at_pos :: proc(game: ^GameMemory, pos: WorldPosition) -> (EntityHand
 	return EntityHandle{}, false
 }
 
+can_entity_move_into_position :: proc(
+	game: ^GameMemory,
+	entity: EntityHandle,
+	pos: WorldPosition,
+) -> bool {
+	ent_at_pos, exists := game_entity_at_pos(game, pos)
+	if (!exists) {
+		return true
+	}
+	return ent_at_pos == entity
+}
+
+
 max_walk_count := 128

@@ -123,18 +123,6 @@ world_path_finder_get_neighbors :: proc(
 	return nodes[:]
 }
 
-can_entity_move_into_position :: proc(
-	game: ^GameMemory,
-	entity: EntityHandle,
-	pos: WorldPosition,
-) -> bool {
-	ent_at_pos, exists := game_entity_at_pos(game, pos)
-	if (!exists) {
-		return true
-	}
-	return ent_at_pos == entity
-}
-
 Step :: struct {
 	position:  WorldPosition,
 	step_cost: int,
