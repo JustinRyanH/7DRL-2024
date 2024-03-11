@@ -132,7 +132,20 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			if x == 0 && y == 0 {
 				continue
 			}
-			append(&movement_grid, MovementCell{character.pos + WorldPosition{x, y}, {x, y}})
+
+			pos := character.pos + WorldPosition{x, y}
+			wpf := WorldPathfinder{}
+			world_path_finder_init(&wpf, g_mem.character, pos)
+			path, path_status := world_path_finder_get_path_t(wpf)
+			if path_status == .PathFound {
+				total_cost := step_total_cost(path)
+				if total_cost <= 6 {
+					append(
+						&movement_grid,
+						MovementCell{character.pos + WorldPosition{x, y}, {x, y}},
+					)
+				}
+			}
 		}
 	}
 
@@ -199,7 +212,7 @@ game_draw :: proc() {
 			}
 
 			draw_cmds.draw_text(
-				fmt.ctprintf("%dft", total_cost * 10),
+				fmt.ctprintf("%dft", total_cost * 5),
 				cast(i32)screen_pos.x,
 				cast(i32)screen_pos.y + 10,
 				8,
