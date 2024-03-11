@@ -187,23 +187,25 @@ game_draw :: proc() {
 		wpf := WorldPathfinder{}
 		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
 
-		path_new := world_path_finder_get_path_t(wpf)
-		total_cost := step_total_cost(path_new)
-		for step in path_new {
-			p := step.position
-			draw_cmds.draw_shape(
-				Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
-				Color{1, 0, 0, 0.5},
+		path_new, path_status := world_path_finder_get_path_t(wpf)
+		if path_status == .PathFound {
+			total_cost := step_total_cost(path_new)
+			for step in path_new {
+				p := step.position
+				draw_cmds.draw_shape(
+					Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
+					Color{1, 0, 0, 0.5},
+				)
+			}
+
+			draw_cmds.draw_text(
+				fmt.ctprintf("%dft", total_cost * 10),
+				cast(i32)screen_pos.x,
+				cast(i32)screen_pos.y + 10,
+				8,
+				RED,
 			)
 		}
-
-		draw_cmds.draw_text(
-			fmt.ctprintf("%dft", total_cost * 10),
-			cast(i32)screen_pos.x,
-			cast(i32)screen_pos.y + 10,
-			8,
-			RED,
-		)
 
 
 		entity_iter := data_pool_new_iter(&game.entities)
@@ -275,14 +277,14 @@ world_pos_from_space_as_vec :: #force_inline proc(pos: Vector2) -> Vector2 {
 }
 
 // TODO: This is a gross N multiplier, we should keep a hash of entities at tiles
-game_entity_at_pos :: proc(game: ^GameMemory, pos: WorldPosition) -> EntityHandle {
+game_entity_at_pos :: proc(game: ^GameMemory, pos: WorldPosition) -> (EntityHandle, bool) {
 	iter := data_pool_new_iter(&game.entities)
 	for entity, handle in data_pool_iter(&iter) {
 		if entity.pos == pos {
-			return handle
+			return handle, true
 		}
 	}
-	return EntityHandle{}
+	return EntityHandle{}, false
 }
 
 max_walk_count := 128

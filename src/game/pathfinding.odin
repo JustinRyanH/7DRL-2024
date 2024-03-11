@@ -4,6 +4,13 @@ import pq "core:container/priority_queue"
 import "core:fmt"
 import math "core:math/linalg"
 
+PathFindingIssue :: enum {
+	PathFound,
+	NoPathFound,
+	DestinationBlocked,
+	SourceAndDestSame,
+}
+
 WorldPosition :: distinct [2]int
 
 WorldPathfinder :: struct {
@@ -23,9 +30,12 @@ world_path_finder_init :: proc(wpf: ^WorldPathfinder, entity: EntityHandle, dest
 	wpf.start = entity.pos
 }
 
-world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> []Step {
+world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> ([]Step, PathFindingIssue) {
 	if wpf.start == wpf.dest {
-		return []Step{}
+		return []Step{}, .SourceAndDestSame
+	}
+	if !can_entity_move_into_position(wpf.game, wpf.entity, wpf.dest) {
+		return []Step{}, .DestinationBlocked
 	}
 	start := wpf.start
 
@@ -56,14 +66,13 @@ world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> []Step {
 			for {
 				pos, is_pos := next.(WorldPosition)
 				if !is_pos {
-					return path[:]
+					break
 				}
 				node := processed[pos]
 				append(&path, Step{pos, node.step_cost})
 				next = node.connection
 			}
-
-			assert(false, "We did not actually find a good path")
+			return path[:], .PathFound
 		}
 
 		neighbors := world_path_finder_get_neighbors(wpf, current)
@@ -75,10 +84,8 @@ world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> []Step {
 		}
 	}
 
-	assert(false, "We should have a path")
 
-
-	return []Step{}
+	return []Step{}, .NoPathFound
 }
 
 world_path_finder_get_neighbors :: proc(
@@ -114,7 +121,18 @@ world_path_finder_get_neighbors :: proc(
 	}
 
 	return nodes[:]
+}
 
+can_entity_move_into_position :: proc(
+	game: ^GameMemory,
+	entity: EntityHandle,
+	pos: WorldPosition,
+) -> bool {
+	ent_at_pos, exists := game_entity_at_pos(game, pos)
+	if (!exists) {
+		return true
+	}
+	return ent_at_pos == entity
 }
 
 Step :: struct {
