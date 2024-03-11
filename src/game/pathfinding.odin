@@ -80,6 +80,13 @@ world_path_finder_get_path_t :: proc(wpf: WorldPathfinder) -> ([]Step, PathFindi
 			if n.pos in processed {
 				continue
 			}
+			eh, exist := game_entity_at_pos(g_mem, n.pos)
+			if exist {
+				if eh != wpf.entity {
+					continue
+				}
+			}
+
 			pq.push(&to_search, n)
 		}
 	}
