@@ -31,16 +31,17 @@ GameAtlasList :: struct {
 
 EntityHandle :: distinct Handle
 Entity :: struct {
-	pos:      WorldPosition,
-	img_type: ImageType,
-	color:    Color,
+	pos:            WorldPosition,
+	img_type:       ImageType,
+	color:          Color,
+	movement_speed: int,
 }
 
 EntityMovement :: struct {
-  entity: EntityHandle,
-  path: []Step,
-  current_step: int,
-  percentage: int,
+	entity:       EntityHandle,
+	path:         []Step,
+	current_step: int,
+	percentage:   int,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
@@ -57,8 +58,8 @@ GameMemory :: struct {
 	entities:   Entities,
 	character:  EntityHandle,
 	camera:     Camera2D,
-  is_moving: bool,
-  movements:  DataPool(4, EntityMovement, Handle),
+	is_moving:  bool,
+	movements:  DataPool(4, EntityMovement, Handle),
 }
 
 
@@ -98,12 +99,12 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{WorldPosition{}, .Man, WHITE}
+	e^ = Entity{WorldPosition{}, .Man, WHITE, 6}
 	g_mem.character = h
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		data_pool_add(&g_mem.entities, Entity{pos, .Goblin, GREEN})
+		data_pool_add(&g_mem.entities, Entity{pos, .Goblin, GREEN, 4})
 	}
 
 	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
@@ -128,11 +129,11 @@ game_update_context :: proc(new_ctx: ^Context) {
 game_update :: proc(frame_input: input.FrameInput) -> bool {
 	g_input = frame_input
 
-  maybe_path = []Step{}
+	maybe_path = []Step{}
 	movement_grid = make([dynamic]MovementCell, 0, 1024, context.temp_allocator)
 
 	dt := input.frame_query_delta(frame_input)
-	character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	camera := &g_mem.camera
 
 	if character == nil {
@@ -151,7 +152,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			path, path_status := world_path_finder_get_path_t(wpf)
 			if path_status == .PathFound {
 				total_cost := step_total_cost(path)
-				if total_cost <= 6 {
+				if total_cost <= character.movement_speed {
 					append(
 						&movement_grid,
 						MovementCell{character.pos + WorldPosition{x, y}, {x, y}},
@@ -162,16 +163,16 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	}
 
 	draw_camera := &ctx.draw_cmds.camera
-  screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
-  world_pos := world_pos_from_space_as_vec(screen_pos)
-  world_pos_int := world_pos_from_space(screen_pos)
+	screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
+	world_pos := world_pos_from_space_as_vec(screen_pos)
+	world_pos_int := world_pos_from_space(screen_pos)
 
-  wpf := WorldPathfinder{}
-  world_path_finder_init(&wpf, g_mem.character, world_pos_int)
-  path_new, path_status := world_path_finder_get_path_t(wpf)
-  if path_status == .PathFound {
-      maybe_path = path_new
-  }
+	wpf := WorldPathfinder{}
+	world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+	path_new, path_status := world_path_finder_get_path_t(wpf)
+	if path_status == .PathFound {
+		maybe_path = path_new
+	}
 
 	if input.was_just_released(frame_input, .D) {
 		character.pos += WorldPosition{1, 0}
@@ -215,20 +216,34 @@ game_draw :: proc() {
 			)
 		}
 
-		character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
+		character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
+		assert(character != nil, "Character should always exists")
 
+		total_cost := 0
+		#reverse for step in maybe_path {
+			p := step.position
+			total_cost += step.step_cost
+			color := Color{1, 0, 0, 0.5}
+			if total_cost > character.movement_speed {
+				color.a = 0.2
+			}
 
-    for step, index in maybe_path {
-      p := step.position
-      draw_cmds.draw_shape(
-        Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
-        Color{1, 0, 0, 0.5},
-      )
-    }
+			draw_cmds.draw_shape(Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0}, color)
+			draw_cmds.draw_text(
+				fmt.ctprintf("%d", total_cost),
+				cast(i32)p.x * 16 - 2,
+				cast(i32)p.y * 16 - 4,
+				6,
+				WHITE,
+			)
+		}
 		if len(maybe_path) > 0 {
 			total_cost := step_total_cost(maybe_path)
 
-      screen_pos := draw_camera.screen_to_world_2d(game.camera, input.mouse_position(g_input))
+			screen_pos := draw_camera.screen_to_world_2d(
+				game.camera,
+				input.mouse_position(g_input),
+			)
 			draw_cmds.draw_text(
 				fmt.ctprintf("%dft", total_cost * 5),
 				cast(i32)screen_pos.x,
