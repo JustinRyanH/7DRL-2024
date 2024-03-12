@@ -167,25 +167,36 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	world_pos := world_pos_from_space_as_vec(screen_pos)
 	world_pos_int := world_pos_from_space(screen_pos)
 
-	wpf := WorldPathfinder{}
-	world_path_finder_init(&wpf, g_mem.character, world_pos_int)
-	path_new, path_status := world_path_finder_get_path_t(wpf)
-	if path_status == .PathFound {
-		maybe_path = path_new
+	if !g_mem.is_moving {
+		wpf := WorldPathfinder{}
+		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+		path_new, path_status := world_path_finder_get_path_t(wpf)
+		if path_status == .PathFound {
+			maybe_path = path_new
+		}
+
+		if input.was_just_released(frame_input, .D) {
+			character.pos += WorldPosition{1, 0}
+		}
+		if input.was_just_released(frame_input, .A) {
+			character.pos -= WorldPosition{1, 0}
+		}
+		if input.was_just_released(frame_input, .W) {
+			character.pos -= WorldPosition{0, 1}
+		}
+		if input.was_just_released(frame_input, .S) {
+			character.pos += WorldPosition{0, 1}
+		}
+
+		if input.was_just_released(frame_input, input.MouseButton.LEFT) {
+			new_steps := make([]Step, len(maybe_path))
+			copy(new_steps, maybe_path)
+			new_walk_path := EntityMovement{g_mem.character, new_steps, 0, 0}
+			data_pool_add(&g_mem.movements, new_walk_path)
+			g_mem.is_moving = true
+		}
 	}
 
-	if input.was_just_released(frame_input, .D) {
-		character.pos += WorldPosition{1, 0}
-	}
-	if input.was_just_released(frame_input, .A) {
-		character.pos -= WorldPosition{1, 0}
-	}
-	if input.was_just_released(frame_input, .W) {
-		character.pos -= WorldPosition{0, 1}
-	}
-	if input.was_just_released(frame_input, .S) {
-		character.pos += WorldPosition{0, 1}
-	}
 	char_world_pos := world_pos_to_vec(character.pos) * 16
 	camera_dist := math.length2(char_world_pos - camera.target)
 
