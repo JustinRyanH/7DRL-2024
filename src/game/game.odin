@@ -36,6 +36,13 @@ Entity :: struct {
 	color:    Color,
 }
 
+EntityMovement :: struct {
+  entity: EntityHandle,
+  path: []Step,
+  current_step: int,
+  percentage: int,
+}
+
 Entities :: DataPool(1024, Entity, EntityHandle)
 
 GameMemory :: struct {
@@ -50,6 +57,8 @@ GameMemory :: struct {
 	entities:   Entities,
 	character:  EntityHandle,
 	camera:     Camera2D,
+  is_moving: bool,
+  movements:  DataPool(4, EntityMovement, Handle),
 }
 
 
@@ -58,6 +67,7 @@ g_input: input.FrameInput
 g_mem: ^GameMemory
 
 movement_grid: [dynamic]MovementCell
+maybe_path: []Step
 
 current_input :: #force_inline proc() -> input.UserInput {
 	return g_input.current_frame
@@ -118,6 +128,7 @@ game_update_context :: proc(new_ctx: ^Context) {
 game_update :: proc(frame_input: input.FrameInput) -> bool {
 	g_input = frame_input
 
+  maybe_path = []Step{}
 	movement_grid = make([dynamic]MovementCell, 0, 1024, context.temp_allocator)
 
 	dt := input.frame_query_delta(frame_input)
@@ -127,6 +138,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	if character == nil {
 		panic("The player should always be in the game")
 	}
+
 	for x in -6 ..= 6 {
 		for y in -6 ..= 6 {
 			if x == 0 && y == 0 {
@@ -148,6 +160,18 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			}
 		}
 	}
+
+	draw_camera := &ctx.draw_cmds.camera
+  screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
+  world_pos := world_pos_from_space_as_vec(screen_pos)
+  world_pos_int := world_pos_from_space(screen_pos)
+
+  wpf := WorldPathfinder{}
+  world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+  path_new, path_status := world_path_finder_get_path_t(wpf)
+  if path_status == .PathFound {
+      maybe_path = path_new
+  }
 
 	if input.was_just_released(frame_input, .D) {
 		character.pos += WorldPosition{1, 0}
@@ -193,24 +217,18 @@ game_draw :: proc() {
 
 		character := data_pool_get_ptr(&g_mem.entities, g_mem.character)
 
-		screen_pos := draw_camera.screen_to_world_2d(game.camera, input.mouse_position(g_input))
-		world_pos := world_pos_from_space_as_vec(screen_pos)
-		world_pos_int := world_pos_from_space(screen_pos)
 
-		wpf := WorldPathfinder{}
-		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+    for step, index in maybe_path {
+      p := step.position
+      draw_cmds.draw_shape(
+        Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
+        Color{1, 0, 0, 0.5},
+      )
+    }
+		if len(maybe_path) > 0 {
+			total_cost := step_total_cost(maybe_path)
 
-		path_new, path_status := world_path_finder_get_path_t(wpf)
-		if path_status == .PathFound {
-			total_cost := step_total_cost(path_new)
-			for step in path_new {
-				p := step.position
-				draw_cmds.draw_shape(
-					Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0},
-					Color{1, 0, 0, 0.5},
-				)
-			}
-
+      screen_pos := draw_camera.screen_to_world_2d(game.camera, input.mouse_position(g_input))
 			draw_cmds.draw_text(
 				fmt.ctprintf("%dft", total_cost * 5),
 				cast(i32)screen_pos.x,
