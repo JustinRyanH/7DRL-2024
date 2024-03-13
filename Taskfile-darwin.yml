@@ -37,12 +37,16 @@ tasks:
 
   test:
     cmds:
-      - odin test src/game -out:bin/game_test
-      - odin test src/game/input -out:bin/game_input_test
-      - odin test src/main -out:bin/platform_test
+      - odin test src/game -out:bin/game_test -debug
+      - odin test src/game/input -out:bin/game_input_test -debug
+      - odin test src/main -out:bin/platform_test -debug
     aliases:
       - t
     method: none
     silent: true
+    generates:
+      - bin/game_test
+      - bin/game_input_test
+      - bin/playform_test
     sources:
       - ./src/**/*.odin
