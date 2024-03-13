@@ -391,6 +391,10 @@ can_entity_move_into_position :: proc(
 }
 
 game_order_entity_move :: proc(mem: ^GameMemory, handle: EntityHandle, path: []Step) {
+	if len(path) == 0 {
+		// TODO: This should have a warning log
+		return
+	}
 	entity := data_pool_get_ptr(&mem.entities, handle)
 	if entity == nil {
 		return
@@ -417,8 +421,11 @@ game_process_events :: proc(mem: ^GameMemory) {
 			// TODO: Warn when we give command to non-existant entity
 			if entity != nil {
 				move := EntityMove{}
+
 				move.path = evt.path
 				entity.action = move
+
+				assert(len(move.path) > 0, "we shouldn't have zero paths moves")
 			}
 		case BeginWait:
 			entity := data_pool_get_ptr(&mem.entities, evt.entity)
@@ -431,7 +438,7 @@ game_process_events :: proc(mem: ^GameMemory) {
 			e, found := data_pool_get(&mem.entities, evt.entity)
 			if found {
 				fmt.printf(
-					"Out of Range, Max of %dft but tried to travel %dft",
+					"Out of Range, Max of %dft but tried to travel %dft\n",
 					e.movement_speed * 5,
 					evt.total_cost * 5,
 				)
@@ -460,6 +467,8 @@ game_entity_handle_move_command :: proc(
 		} else {
 			action.percentage = 1
 			ring_buffer_append(&mem.event_queue, BeginWait{handle})
+			delete(action.path)
+			return
 		}
 	}
 
