@@ -7,6 +7,7 @@ import "core:io"
 import math "core:math/linalg"
 import "core:math/rand"
 import "core:mem"
+import "core:slice"
 
 import "./input"
 
@@ -20,8 +21,13 @@ StartMoving :: struct {
 	path:   []Step,
 }
 
+BeginWait :: struct {
+	entity: EntityHandle,
+}
+
 GameEvent :: union {
 	StartMoving,
+	BeginWait,
 }
 
 MovementCell :: struct {
@@ -41,6 +47,7 @@ GameAtlasList :: struct {
 EntityHandle :: distinct Handle
 Entity :: struct {
 	pos:            WorldPosition,
+	display_pos:    Vector2,
 	img_type:       ImageType,
 	color:          Color,
 	movement_speed: int,
@@ -54,7 +61,7 @@ EntityWait :: struct {}
 EntityMove :: struct {
 	path:         []Step,
 	current_step: int,
-	percentage:   int,
+	percentage:   f32,
 }
 
 EntityAction :: union {
@@ -116,12 +123,15 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{WorldPosition{}, .Man, WHITE, 6, EntityWait{}}
+	e^ = Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, EntityWait{}}
 	g_mem.character = h
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		data_pool_add(&g_mem.entities, Entity{pos, .Goblin, GREEN, 4, EntityWait{}})
+		data_pool_add(
+			&g_mem.entities,
+			Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, EntityWait{}},
+		)
 	}
 
 	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
@@ -153,10 +163,15 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	camera := &g_mem.camera
 
-	for evt in ring_buffer_pop(&g_mem.event_queue) {
-		move := EntityMove{}
-		move.path = move.path
-		character.action = move
+	for event in ring_buffer_pop(&g_mem.event_queue) {
+		switch evt in event {
+		case StartMoving:
+			move := EntityMove{}
+			move.path = evt.path
+			character.action = move
+		case BeginWait:
+			character.action = EntityWait{}
+		}
 	}
 
 	assert(character != nil, "The player should always be in the game")
@@ -189,8 +204,10 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	world_pos_int := world_pos_from_space(screen_pos)
 
 
-	switch action in character.action {
+	switch action in &character.action {
 	case EntityWait:
+		character.display_pos = world_pos_to_vec(character.pos)
+
 		wpf := WorldPathfinder{}
 		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
 		path_new, path_status := world_path_finder_get_path_t(wpf)
@@ -212,14 +229,27 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 
 		if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-			next_evt := StartMoving{}
-			next_evt.entity = g_mem.character
-			next_evt.path = make([]Step, len(maybe_path))
-			copy(next_evt.path, maybe_path)
-			ring_buffer_append(&g_mem.event_queue, next_evt)
+			game_order_entity_move(g_mem, character, maybe_path)
 		}
 	case EntityMove:
+		action.percentage += dt * 5
+		if action.percentage >= 1 {
+			if action.current_step < len(action.path) - 2 {
+				left := action.percentage - 1
+				action.percentage = left
+				action.current_step += 1
+			} else {
+				action.percentage = 1
+				ring_buffer_append(&g_mem.event_queue, BeginWait{g_mem.character})
+			}
+		}
 
+		step := action.current_step
+		last_step := world_pos_to_vec(action.path[step].position)
+		next_step := world_pos_to_vec(action.path[step + 1].position)
+
+		character.pos = action.path[step + 1].position
+		character.display_pos = math.lerp(last_step, next_step, action.percentage)
 	}
 
 	char_world_pos := world_pos_to_vec(character.pos) * 16
@@ -379,6 +409,19 @@ can_entity_move_into_position :: proc(
 		return true
 	}
 	return ent_at_pos == entity
+}
+
+game_order_entity_move :: proc(mem: ^GameMemory, entity: ^Entity, path: []Step) {
+	total_cost := step_total_cost(maybe_path)
+	if total_cost > entity.movement_speed {
+		return
+	}
+	next_evt := StartMoving{}
+	next_evt.entity = g_mem.character
+	next_evt.path = make([]Step, len(maybe_path))
+	copy(next_evt.path, maybe_path)
+	slice.reverse(next_evt.path)
+	ring_buffer_append(&g_mem.event_queue, next_evt)
 }
 
 
