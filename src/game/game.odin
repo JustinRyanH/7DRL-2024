@@ -15,6 +15,13 @@ import mu "../microui"
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
+StartMoving :: struct {
+	entity: EntityHandle,
+	path:   []Step,
+}
+
+GameEvents :: union {}
+
 MovementCell :: struct {
 	point:  WorldPosition,
 	offset: [2]int,
@@ -35,13 +42,22 @@ Entity :: struct {
 	img_type:       ImageType,
 	color:          Color,
 	movement_speed: int,
+	action:         EntityAction,
 }
 
-EntityMovement :: struct {
-	entity:       EntityHandle,
+// The Entity is waiting for command
+EntityWait :: struct {}
+
+// The Entity has been commanded to move
+EntityMove :: struct {
 	path:         []Step,
 	current_step: int,
 	percentage:   int,
+}
+
+EntityAction :: union {
+	EntityWait,
+	EntityMove,
 }
 
 Entities :: DataPool(1024, Entity, EntityHandle)
@@ -58,8 +74,6 @@ GameMemory :: struct {
 	entities:   Entities,
 	character:  EntityHandle,
 	camera:     Camera2D,
-	is_moving:  bool,
-	movements:  DataPool(4, EntityMovement, Handle),
 }
 
 
@@ -99,12 +113,12 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{WorldPosition{}, .Man, WHITE, 6}
+	e^ = Entity{WorldPosition{}, .Man, WHITE, 6, EntityWait{}}
 	g_mem.character = h
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		data_pool_add(&g_mem.entities, Entity{pos, .Goblin, GREEN, 4})
+		data_pool_add(&g_mem.entities, Entity{pos, .Goblin, GREEN, 4, EntityWait{}})
 	}
 
 	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
@@ -136,9 +150,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	camera := &g_mem.camera
 
-	if character == nil {
-		panic("The player should always be in the game")
-	}
+	assert(character != nil, "The player should always be in the game")
 
 	for x in -6 ..= 6 {
 		for y in -6 ..= 6 {
@@ -167,7 +179,9 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	world_pos := world_pos_from_space_as_vec(screen_pos)
 	world_pos_int := world_pos_from_space(screen_pos)
 
-	if !g_mem.is_moving {
+
+	switch action in character.action {
+	case EntityWait:
 		wpf := WorldPathfinder{}
 		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
 		path_new, path_status := world_path_finder_get_path_t(wpf)
@@ -188,13 +202,15 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			character.pos += WorldPosition{0, 1}
 		}
 
-		if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-			new_steps := make([]Step, len(maybe_path))
-			copy(new_steps, maybe_path)
-			new_walk_path := EntityMovement{g_mem.character, new_steps, 0, 0}
-			data_pool_add(&g_mem.movements, new_walk_path)
-			g_mem.is_moving = true
-		}
+	// if input.was_just_released(frame_input, input.MouseButton.LEFT) {
+	// 	new_steps := make([]Step, len(maybe_path))
+	// 	copy(new_steps, maybe_path)
+	// 	new_walk_path := EntityMovement{g_mem.character, new_steps, 0, 0}
+	// 	data_pool_add(&g_mem.movements, new_walk_path)
+	// 	g_mem.is_moving = true
+	// }
+	case EntityMove:
+
 	}
 
 	char_world_pos := world_pos_to_vec(character.pos) * 16
