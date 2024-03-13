@@ -172,11 +172,19 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	for event in ring_buffer_pop(&g_mem.event_queue) {
 		switch evt in event {
 		case StartMoving:
-			move := EntityMove{}
-			move.path = evt.path
-			character.action = move
+			entity := data_pool_get_ptr(&g_mem.entities, evt.entity)
+			// TODO: Warn when we give command to non-existant entity
+			if entity != nil {
+				move := EntityMove{}
+				move.path = evt.path
+				entity.action = move
+			}
 		case BeginWait:
-			character.action = EntityWait{}
+			entity := data_pool_get_ptr(&g_mem.entities, evt.entity)
+			// TODO: Warn when we give command to non-existant entity
+			if entity != nil {
+				entity.action = EntityWait{}
+			}
 		case MoveCommandOutOfRange:
 			// TODO: Let's make a little Toast
 			e, found := data_pool_get(&g_mem.entities, evt.entity)
