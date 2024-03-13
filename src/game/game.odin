@@ -25,9 +25,15 @@ BeginWait :: struct {
 	entity: EntityHandle,
 }
 
+MoveCommandOutOfRange :: struct {
+	entity:     EntityHandle,
+	total_cost: int,
+}
+
 GameEvent :: union {
 	StartMoving,
 	BeginWait,
+	MoveCommandOutOfRange,
 }
 
 MovementCell :: struct {
@@ -171,6 +177,17 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			character.action = move
 		case BeginWait:
 			character.action = EntityWait{}
+		case MoveCommandOutOfRange:
+			// TODO: Let's make a little Toast
+			e, found := data_pool_get(&g_mem.entities, evt.entity)
+			if found {
+				fmt.printf(
+					"Out of Range, Max of %dft but tried to travel %dft",
+					e.movement_speed * 5,
+					evt.total_cost * 5,
+				)
+			}
+
 		}
 	}
 
@@ -229,7 +246,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 
 		if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-			game_order_entity_move(g_mem, character, maybe_path)
+			game_order_entity_move(g_mem, g_mem.character, maybe_path)
 		}
 	case EntityMove:
 		action.percentage += dt * 5
@@ -411,9 +428,15 @@ can_entity_move_into_position :: proc(
 	return ent_at_pos == entity
 }
 
-game_order_entity_move :: proc(mem: ^GameMemory, entity: ^Entity, path: []Step) {
+game_order_entity_move :: proc(mem: ^GameMemory, handle: EntityHandle, path: []Step) {
+	entity := data_pool_get_ptr(&mem.entities, handle)
+	if entity == nil {
+		return
+	}
+
 	total_cost := step_total_cost(maybe_path)
 	if total_cost > entity.movement_speed {
+		ring_buffer_append(&mem.event_queue, MoveCommandOutOfRange{handle, total_cost})
 		return
 	}
 	next_evt := StartMoving{}
