@@ -60,7 +60,7 @@ EntityAction :: union {
 	EntityMove,
 }
 
-Entities :: DataPool(1024, Entity, EntityHandle)
+Entities :: DataPool(128, Entity, EntityHandle)
 
 GameMemory :: struct {
 	scene_size: Vector2,
