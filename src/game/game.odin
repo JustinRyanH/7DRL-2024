@@ -168,38 +168,9 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	dt := input.frame_query_delta(frame_input)
 	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	camera := &g_mem.camera
-
-	for event in ring_buffer_pop(&g_mem.event_queue) {
-		switch evt in event {
-		case StartMoving:
-			entity := data_pool_get_ptr(&g_mem.entities, evt.entity)
-			// TODO: Warn when we give command to non-existant entity
-			if entity != nil {
-				move := EntityMove{}
-				move.path = evt.path
-				entity.action = move
-			}
-		case BeginWait:
-			entity := data_pool_get_ptr(&g_mem.entities, evt.entity)
-			// TODO: Warn when we give command to non-existant entity
-			if entity != nil {
-				entity.action = EntityWait{}
-			}
-		case MoveCommandOutOfRange:
-			// TODO: Let's make a little Toast
-			e, found := data_pool_get(&g_mem.entities, evt.entity)
-			if found {
-				fmt.printf(
-					"Out of Range, Max of %dft but tried to travel %dft",
-					e.movement_speed * 5,
-					evt.total_cost * 5,
-				)
-			}
-
-		}
-	}
-
 	assert(character != nil, "The player should always be in the game")
+
+	game_process_events(g_mem)
 
 	for x in -6 ..= 6 {
 		for y in -6 ..= 6 {
@@ -453,6 +424,40 @@ game_order_entity_move :: proc(mem: ^GameMemory, handle: EntityHandle, path: []S
 	copy(next_evt.path, maybe_path)
 	slice.reverse(next_evt.path)
 	ring_buffer_append(&g_mem.event_queue, next_evt)
+}
+
+game_process_events :: proc(mem: ^GameMemory) {
+	for event in ring_buffer_pop(&mem.event_queue) {
+		switch evt in event {
+		case StartMoving:
+			entity := data_pool_get_ptr(&mem.entities, evt.entity)
+			// TODO: Warn when we give command to non-existant entity
+			if entity != nil {
+				move := EntityMove{}
+				move.path = evt.path
+				entity.action = move
+			}
+		case BeginWait:
+			entity := data_pool_get_ptr(&mem.entities, evt.entity)
+			// TODO: Warn when we give command to non-existant entity
+			if entity != nil {
+				entity.action = EntityWait{}
+			}
+		case MoveCommandOutOfRange:
+			// TODO: Let's make a little Toast
+			e, found := data_pool_get(&mem.entities, evt.entity)
+			if found {
+				fmt.printf(
+					"Out of Range, Max of %dft but tried to travel %dft",
+					e.movement_speed * 5,
+					evt.total_cost * 5,
+				)
+			}
+
+		}
+	}
+
+
 }
 
 
