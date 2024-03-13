@@ -33,3 +33,15 @@ tasks:
       - ./bin/game.dll
     sources:
       - ./**/*.odin
+
+  test:
+    cmds:
+      - odin test src/game -out:bin/game_test.exe
+      - odin test src/game/input -out:bin/game_input_test.exe
+      - odin test src/main -out:bin/platform_test.exe
+    aliases:
+      - t
+    method: none
+    silent: true
+    sources:
+      - ./src/**/*.odin
