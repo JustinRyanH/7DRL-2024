@@ -1,5 +1,7 @@
 package game
 
+
+import "core:fmt"
 import "core:math"
 import "core:testing"
 
@@ -25,8 +27,10 @@ ring_buffer_pop :: proc(rb: ^RingBuffer($N, $T)) -> (val: T, empty: bool) {
 	if (ring_buffer_len(rb) == 0) {
 		return
 	}
-	if (rb.end_index <= rb.start_index) {
-		return
+	if (rb.end_index < rb.start_index) {
+		val = rb.items[rb.end_index]
+		rb.end_index = math.min(rb.end_index + 1, rb.start_index)
+		return val, true
 	}
 	val = rb.items[rb.start_index]
 	rb.start_index = math.min(rb.start_index + 1, rb.end_index)
