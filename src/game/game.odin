@@ -20,7 +20,9 @@ StartMoving :: struct {
 	path:   []Step,
 }
 
-GameEvents :: union {}
+GameEvent :: union {
+	StartMoving,
+}
 
 MovementCell :: struct {
 	point:  WorldPosition,
@@ -63,17 +65,18 @@ EntityAction :: union {
 Entities :: DataPool(128, Entity, EntityHandle)
 
 GameMemory :: struct {
-	scene_size: Vector2,
+	scene_size:  Vector2,
 
 	// Assets
-	fonts:      GameFonts,
-	atlas_list: GameAtlasList,
+	fonts:       GameFonts,
+	atlas_list:  GameAtlasList,
 
 
 	// Game
-	entities:   Entities,
-	character:  EntityHandle,
-	camera:     Camera2D,
+	event_queue: RingBuffer(32, GameEvent),
+	entities:    Entities,
+	character:   EntityHandle,
+	camera:      Camera2D,
 }
 
 
@@ -150,6 +153,12 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 	camera := &g_mem.camera
 
+	for evt in ring_buffer_pop(&g_mem.event_queue) {
+		move := EntityMove{}
+		move.path = move.path
+		character.action = move
+	}
+
 	assert(character != nil, "The player should always be in the game")
 
 	for x in -6 ..= 6 {
@@ -202,13 +211,13 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			character.pos += WorldPosition{0, 1}
 		}
 
-	// if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-	// 	new_steps := make([]Step, len(maybe_path))
-	// 	copy(new_steps, maybe_path)
-	// 	new_walk_path := EntityMovement{g_mem.character, new_steps, 0, 0}
-	// 	data_pool_add(&g_mem.movements, new_walk_path)
-	// 	g_mem.is_moving = true
-	// }
+		if input.was_just_released(frame_input, input.MouseButton.LEFT) {
+			next_evt := StartMoving{}
+			next_evt.entity = g_mem.character
+			next_evt.path = make([]Step, len(maybe_path))
+			copy(next_evt.path, maybe_path)
+			ring_buffer_append(&g_mem.event_queue, next_evt)
+		}
 	case EntityMove:
 
 	}
