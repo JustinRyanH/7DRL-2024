@@ -12,11 +12,16 @@ RingBuffer :: struct($N: u32, $T: typeid) {
 }
 
 ring_buffer_append :: proc(rb: ^RingBuffer($N, $T), v: T) -> bool {
+	fmt.println(rb.start_index, rb.end_index, ring_buffer_len(rb))
 	if (ring_buffer_len(rb) == N) {
 		return false
 	}
+
 	if (rb.end_index == N) {
 		rb.end_index = 0
+	}
+	if rb.end_index < rb.start_index {
+		fmt.println("A", rb.start_index, rb.end_index, ring_buffer_len(rb))
 	}
 	rb.items[rb.end_index] = v
 	rb.end_index += 1
@@ -27,10 +32,8 @@ ring_buffer_pop :: proc(rb: ^RingBuffer($N, $T)) -> (val: T, empty: bool) {
 	if (ring_buffer_len(rb) == 0) {
 		return
 	}
-	if (rb.end_index < rb.start_index) {
-		val = rb.items[rb.end_index]
-		rb.end_index = math.min(rb.end_index + 1, rb.start_index)
-		return val, true
+	if (rb.end_index <= rb.start_index) {
+		return
 	}
 	val = rb.items[rb.start_index]
 	rb.start_index = math.min(rb.start_index + 1, rb.end_index)
@@ -40,9 +43,6 @@ ring_buffer_pop :: proc(rb: ^RingBuffer($N, $T)) -> (val: T, empty: bool) {
 }
 
 ring_buffer_len :: proc(rb: ^RingBuffer($N, $T)) -> u32 {
-	if (rb.start_index == rb.end_index) {
-		return 0
-	}
 	if (rb.end_index < rb.start_index) {
 		return N - rb.start_index + rb.end_index
 	}
@@ -137,7 +137,16 @@ test_ring_buffer_loop :: proc(t: ^testing.T) {
 	success := ring_buffer_append(&buffer, 6)
 	expect(t, success, "stays healthy after looping")
 	success = ring_buffer_append(&buffer, 7)
-	expect(t, success, "stays healthy after looping")
+	expect(t, !success, "Only handles 3 elements")
+
+
+	fmt.println(buffer)
+	v, exists = ring_buffer_pop(&buffer)
+	expectf(t, v == 4, "Expected: %v found: %v", 4, v)
+	v, exists = ring_buffer_pop(&buffer)
+	expectf(t, v == 5, "Expected: %v found: %v", 5, v)
+	v, exists = ring_buffer_pop(&buffer)
+	expectf(t, v == 6, "Expected: %v found: %v", 6, v)
 }
 
 @(test)
