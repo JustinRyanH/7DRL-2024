@@ -138,6 +138,7 @@ test_ring_buffer_loop :: proc(t: ^testing.T) {
 	expectf(t, v == 6, "Expected: %v found: %v", 6, v)
 }
 
+@(test)
 test_can_i_iter_ring_buffer :: proc(t: ^testing.T) {
 	using testing
 	ByteRingBuffer :: RingBuffer(3, u8)
