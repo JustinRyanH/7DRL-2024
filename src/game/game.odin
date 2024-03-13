@@ -228,24 +228,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			game_order_entity_move(g_mem, g_mem.character, maybe_path)
 		}
 	case EntityMove:
-		action.percentage += dt * 5
-		if action.percentage >= 1 {
-			if action.current_step < len(action.path) - 2 {
-				left := action.percentage - 1
-				action.percentage = left
-				action.current_step += 1
-			} else {
-				action.percentage = 1
-				ring_buffer_append(&g_mem.event_queue, BeginWait{g_mem.character})
-			}
-		}
-
-		step := action.current_step
-		last_step := world_pos_to_vec(action.path[step].position)
-		next_step := world_pos_to_vec(action.path[step + 1].position)
-
-		character.pos = action.path[step + 1].position
-		character.display_pos = math.lerp(last_step, next_step, action.percentage)
+		game_entity_handle_move_command(g_mem.character, character, &action)
 	}
 
 	char_world_pos := world_pos_to_vec(character.pos) * 16
@@ -458,6 +441,34 @@ game_process_events :: proc(mem: ^GameMemory) {
 	}
 
 
+}
+
+game_entity_handle_move_command :: proc(
+	handle: EntityHandle,
+	entity: ^Entity,
+	action: ^EntityMove,
+) {
+	mem := g_mem
+	dt := input.frame_query_delta(g_input)
+
+	action.percentage += dt * 5
+	if action.percentage >= 1 {
+		if action.current_step < len(action.path) - 2 {
+			left := action.percentage - 1
+			action.percentage = left
+			action.current_step += 1
+		} else {
+			action.percentage = 1
+			ring_buffer_append(&mem.event_queue, BeginWait{handle})
+		}
+	}
+
+	step := action.current_step
+	last_step := world_pos_to_vec(action.path[step].position)
+	next_step := world_pos_to_vec(action.path[step + 1].position)
+
+	entity.pos = action.path[step + 1].position
+	entity.display_pos = math.lerp(last_step, next_step, action.percentage)
 }
 
 
