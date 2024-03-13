@@ -10,11 +10,15 @@
 [ ] Add Enemies
 [ ] Combat
 
-
 ### Nice to Haves
 
 [ ] Toast whenever there is a message
 [ ] A logging system
+
+
+### Problems to Check for
+
+[ ] Ring Buffer had a bug when it became full. I need to check into this more
 
 ## THOUGHTS
 
