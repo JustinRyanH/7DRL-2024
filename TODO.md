@@ -10,6 +10,12 @@
 [ ] Add Enemies
 [ ] Combat
 
+
+### Nice to Haves
+
+[ ] Toast whenever there is a message
+[ ] A logging system
+
 ## THOUGHTS
 
 Essentially thoughts I have when developing, so I can re-read this and remind
