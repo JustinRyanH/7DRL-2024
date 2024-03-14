@@ -128,8 +128,6 @@ test_ring_buffer_loop :: proc(t: ^testing.T) {
 	success = ring_buffer_append(&buffer, 7)
 	expect(t, !success, "Only handles 3 elements")
 
-
-	fmt.println(buffer)
 	v, exists = ring_buffer_pop(&buffer)
 	expectf(t, v == 4, "Expected: %v found: %v", 4, v)
 	v, exists = ring_buffer_pop(&buffer)
@@ -150,9 +148,9 @@ test_can_i_iter_ring_buffer :: proc(t: ^testing.T) {
 
 	i: u8 = 1
 	for v in ring_buffer_pop(&buffer) {
+		assert(i <= 3, "In infinate loop")
 		expectf(t, v == i, "Expected Value to be: %v, but found: %v", i, v)
 		i += 1
-		assert(i <= 3, "In infinate loop")
 	}
 
 	expect(t, ring_buffer_len(&buffer) == 0, "Ring Buffer should be empty")
