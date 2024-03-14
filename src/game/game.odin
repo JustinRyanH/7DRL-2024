@@ -174,10 +174,6 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 
 	for x in -6 ..= 6 {
 		for y in -6 ..= 6 {
-			if x == 0 && y == 0 {
-				continue
-			}
-
 			pos := character.pos + WorldPosition{x, y}
 			wpf := WorldPathfinder{}
 			world_path_finder_init(&wpf, g_mem.character, pos)
@@ -274,13 +270,6 @@ game_draw :: proc() {
 			}
 
 			draw_cmds.draw_shape(Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0}, color)
-			draw_cmds.draw_text(
-				fmt.ctprintf("%d", total_cost),
-				cast(i32)p.x * 16 - 2,
-				cast(i32)p.y * 16 - 4,
-				6,
-				WHITE,
-			)
 		}
 		if len(maybe_path) > 0 {
 			total_cost := step_total_cost(maybe_path)
