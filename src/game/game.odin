@@ -508,13 +508,19 @@ CharacterAction :: struct {
 // }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
+	font_size: f32 = 24
+	font := ui.spell_large_b
 	draw_cmds := &ctx.draw_cmds
+
 
 	pos :=
 		ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.5, 0} + Vector2{ui.x_start_pointer, 0}
 	size := Vector2{100, 120}
 	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
 	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
+
+	text_dims := draw_cmds.text.measure_text(font, action.name, font_size, 0)
+	draw_cmds.text.draw(font, action.name, pos - Vector2{text_dims.x, 0}, font_size, 0, JudgeGrey)
 	ui.x_start_pointer += size.x + 16
 }
 
