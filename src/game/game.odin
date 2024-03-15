@@ -78,18 +78,26 @@ EntityAction :: union {
 Entities :: DataPool(128, Entity, EntityHandle)
 
 GameMemory :: struct {
-	scene_size:  Vector2,
+	scene_size:    Vector2,
 
 	// Assets
-	fonts:       GameFonts,
-	atlas_list:  GameAtlasList,
+	fonts:         GameFonts,
+	atlas_list:    GameAtlasList,
 
 
 	// Game
-	event_queue: RingBuffer(32, GameEvent),
-	entities:    Entities,
-	character:   EntityHandle,
-	camera:      Camera2D,
+	event_queue:   RingBuffer(32, GameEvent),
+	entities:      Entities,
+	character:     EntityHandle,
+	camera:        Camera2D,
+	ui_action_bar: UiActionBar,
+}
+
+UiActionBar :: struct {
+	position:        Vector2,
+	bar_size:        Vector2,
+	x_start_pointer: f32,
+	spell_large_b:   Font,
 }
 
 
@@ -150,6 +158,11 @@ game_setup :: proc() {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
 	}
 	g_mem.atlas_list.trail = image.handle
+
+	g_mem.ui_action_bar.spell_large_b = ctx.draw_cmds.text.load_font(
+		"assets/fonts/spellbook_large_bold.ttf",
+	)
+	g_mem.ui_action_bar.bar_size = Vector2{900, 120}
 }
 
 @(export)
@@ -159,6 +172,7 @@ game_update_context :: proc(new_ctx: ^Context) {
 
 @(export)
 game_update :: proc(frame_input: input.FrameInput) -> bool {
+	ui_action_bar_reset(&g_mem.ui_action_bar)
 	g_input = frame_input
 
 	maybe_path = []Step{}
@@ -270,34 +284,25 @@ game_draw :: proc() {
 		}
 	}
 
-	ui_area := Vector2{750, 120}
-	draw_cmds.draw_shape(
-		Rectangle{Vector2{width / 2, height - ui_area.y * 0.5 - 4}, ui_area, 0},
-		DriftWood,
-	)
+	{
+		action_bar := &g_mem.ui_action_bar
+		ui_action_bar_begin_draw(action_bar)
+		ui_action_bar_end_draw(action_bar)
+
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Strike", 1})
+		// ui_action_bar_draw_card(action_bar, CharacterAction{"Stride", 1})
+		// ui_action_bar_draw_card(action_bar, CharacterAction{"Step", 1})
+	}
 
 
-	offset: f32 = 0
-	space := draw_action_card(Vector2{100 + offset, 100}, "Feint")
-	offset += space.x + 16
-	space = draw_action_card(Vector2{100 + offset, 100}, "Strike")
-	offset += space.x + 16
-	draw_action_card(Vector2{100 + offset, 100}, "Escape")
+	// offset: f32 = 0
+	// space := draw_action_card(Vector2{100 + offset, 100}, "Feint")
+	// offset += space.x + 16
+	// space = draw_action_card(Vector2{100 + offset, 100}, "Strike")
+	// offset += space.x + 16
+	// draw_action_card(Vector2{100 + offset, 100}, "Escape")
 
 	draw_mouse()
-}
-
-draw_action_card :: proc(pos: Vector2, text: cstring) -> Vector2 {
-	size: f32 = 34
-	draw_cmds := &ctx.draw_cmds
-	fnt := draw_cmds.text.load_font("assets/fonts/spellbook_large_bold.ttf")
-	txt_size := draw_cmds.text.measure_text(fnt, text, size, 0)
-
-
-	draw_cmds.draw_shape(Rectangle{pos, txt_size + Vector2{16, 16}, 0.0}, Fawn)
-	draw_cmds.text.draw(fnt, text, pos - txt_size * 0.5, size, 0, Matterhorn)
-
-	return txt_size + Vector2{16, 16}
 }
 
 @(export)
@@ -471,5 +476,54 @@ game_entity_handle_move_command :: proc(
 	entity.display_pos = math.lerp(last_step, next_step, action.percentage)
 }
 
-
 max_walk_count := 128
+
+
+NonCostAction :: enum {
+	FreeAction = 0,
+	Reaction   = 1,
+}
+ActionCost :: distinct int
+ActionType :: union {
+	ActionCost,
+	NonCostAction,
+}
+
+CharacterAction :: struct {
+	name: cstring,
+	type: ActionType,
+}
+
+// old_draw_action_card :: proc(pos: Vector2, text: cstring) -> Vector2 {
+// 	size: f32 = 34
+// 	draw_cmds := &ctx.draw_cmds
+// 	fnt := draw_cmds.text.load_font("assets/fonts/spellbook_large_bold.ttf")
+// 	txt_size := draw_cmds.text.measure_text(fnt, text, size, 0)
+// 
+// 
+// 	draw_cmds.draw_shape(Rectangle{pos, txt_size + Vector2{16, 16}, 0.0}, Fawn)
+// 	draw_cmds.text.draw(fnt, text, pos - txt_size * 0.5, size, 0, Matterhorn)
+// 
+// 	return txt_size + Vector2{16, 16}
+// }
+
+ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
+	draw_cmds := &ctx.draw_cmds
+
+	pos := ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.75, 0}
+	draw_cmds.draw_shape(Rectangle{pos, Vector2{75, 100}, 0.0}, Fawn)
+}
+
+ui_action_bar_reset :: proc(ui: ^UiActionBar) {
+	ui.x_start_pointer = 0
+}
+
+ui_action_bar_begin_draw :: proc(ui: ^UiActionBar) {
+	width, height := input.frame_query_dimensions(g_input)
+	ui.position = Vector2{width / 2, height - ui.bar_size.y * 0.5 - 8}
+
+
+	ctx.draw_cmds.draw_shape(Rectangle{ui.position, ui.bar_size, 0}, Ferra)
+}
+
+ui_action_bar_end_draw :: proc(ui: ^UiActionBar) {}
