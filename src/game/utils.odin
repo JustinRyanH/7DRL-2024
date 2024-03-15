@@ -1,5 +1,6 @@
 package game
 
+import "core:fmt"
 import "core:hash"
 import "core:strings"
 
@@ -30,7 +31,7 @@ draw_text_fancy :: proc(
 
 	switch settings.alignment {
 	case .Left:
-		dims := text_cmds.measure_text(g_mem.fonts.kenney_future, txt, size, settings.spacing)
+		dims := text_cmds.measure_text(font, txt, size, settings.spacing)
 
 		text_cmds.draw(
 			font,
@@ -41,7 +42,7 @@ draw_text_fancy :: proc(
 			settings.color,
 		)
 	case .Right:
-		dims := text_cmds.measure_text(g_mem.fonts.kenney_future, txt, size, settings.spacing)
+		dims := text_cmds.measure_text(font, txt, size, settings.spacing)
 
 		text_cmds.draw(
 			font,
@@ -52,7 +53,7 @@ draw_text_fancy :: proc(
 			settings.color,
 		)
 	case .Middle:
-		dims := text_cmds.measure_text(g_mem.fonts.kenney_future, txt, size, settings.spacing)
+		dims := text_cmds.measure_text(font, txt, size, settings.spacing)
 
 		text_cmds.draw(font, txt, pos - dims * 0.5, size, settings.spacing, settings.color)
 	}

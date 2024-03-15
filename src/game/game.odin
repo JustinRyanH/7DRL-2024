@@ -508,7 +508,7 @@ CharacterAction :: struct {
 // }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
-	font_size: f32 = 24
+	font_size: f32 = 32
 	font := ui.spell_large_b
 	draw_cmds := &ctx.draw_cmds
 
@@ -518,9 +518,22 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	size := Vector2{100, 120}
 	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
 	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
+	line_padding := Vector2{8, 0}
 
 	text_dims := draw_cmds.text.measure_text(font, action.name, font_size, 0)
-	draw_cmds.text.draw(font, action.name, pos - Vector2{text_dims.x, 0}, font_size, 0, JudgeGrey)
+	text_start := pos - Vector2{0, size.y * 0.5} + Vector2{0, 16}
+
+
+	line_start := text_start + Vector2{-size.x * 0.5, 24} + line_padding
+	line_end := line_start + Vector2{size.x, 0} - line_padding * 2
+
+
+	txt_settings := FancyTextDefaults
+	txt_settings.color = JudgeGrey
+	txt_settings.alignment = .Middle
+	draw_text_fancy(font, action.name, text_start, font_size, txt_settings)
+	draw_cmds.draw_shape(Line{line_start, line_end, 4}, JudgeGrey)
+
 	ui.x_start_pointer += size.x + 16
 }
 
