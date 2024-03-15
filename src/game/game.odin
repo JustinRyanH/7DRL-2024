@@ -97,7 +97,6 @@ ctx: ^Context
 g_input: input.FrameInput
 g_mem: ^GameMemory
 
-movement_grid: [dynamic]MovementCell
 maybe_path: []Step
 
 current_input :: #force_inline proc() -> input.UserInput {
@@ -163,7 +162,6 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	g_input = frame_input
 
 	maybe_path = []Step{}
-	movement_grid = make([dynamic]MovementCell, 0, 1024, context.temp_allocator)
 
 	dt := input.frame_query_delta(frame_input)
 	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
@@ -171,24 +169,6 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	assert(character != nil, "The player should always be in the game")
 
 	game_process_events(g_mem)
-
-	for x in -6 ..= 6 {
-		for y in -6 ..= 6 {
-			pos := character.pos + WorldPosition{x, y}
-			wpf := WorldPathfinder{}
-			world_path_finder_init(&wpf, g_mem.character, pos)
-			path, path_status := world_path_finder_get_path_t(wpf)
-			if path_status == .PathFound {
-				total_cost := step_total_cost(path)
-				if total_cost <= character.movement_speed {
-					append(
-						&movement_grid,
-						MovementCell{character.pos + WorldPosition{x, y}, {x, y}},
-					)
-				}
-			}
-		}
-	}
 
 	draw_camera := &ctx.draw_cmds.camera
 	screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
@@ -242,20 +222,13 @@ game_draw :: proc() {
 	game := g_mem
 	draw_cmds := &ctx.draw_cmds
 	draw_camera := &ctx.draw_cmds.camera
-	draw_cmds.clear(BLACK)
+	draw_cmds.clear(Liver)
 
 	{
 		draw_camera.begin_drawing_2d(game.camera)
 		defer draw_camera.end_drawing_2d()
 
 		draw_cmds.draw_grid(100, 16, Vector2{4, 4} * 50)
-
-		for cell in movement_grid {
-			draw_cmds.draw_shape(
-				Rectangle{world_pos_to_vec(cell.point) * 16, Vector2{8, 8}, 0.0},
-				Color{.2, .21, .28, 0.5},
-			)
-		}
 
 		character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 		assert(character != nil, "Character should always exists")
