@@ -126,7 +126,7 @@ game_setup :: proc() {
 
 	camera := Camera2D{}
 	camera.target = Vector2{}
-	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16}
+	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16} - Vector2{0, 64}
 	camera.rotation = 0
 	camera.zoom = 2.5
 
@@ -162,7 +162,7 @@ game_setup :: proc() {
 	g_mem.ui_action_bar.spell_large_b = ctx.draw_cmds.text.load_font(
 		"assets/fonts/spellbook_large_bold.ttf",
 	)
-	g_mem.ui_action_bar.bar_size = Vector2{900, 120}
+	g_mem.ui_action_bar.bar_size = Vector2{900, 160}
 }
 
 @(export)
@@ -290,8 +290,8 @@ game_draw :: proc() {
 		ui_action_bar_end_draw(action_bar)
 
 		ui_action_bar_draw_card(action_bar, CharacterAction{"Strike", 1})
-		// ui_action_bar_draw_card(action_bar, CharacterAction{"Stride", 1})
-		// ui_action_bar_draw_card(action_bar, CharacterAction{"Step", 1})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Stride", 1})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Step", 1})
 	}
 
 
@@ -510,12 +510,16 @@ CharacterAction :: struct {
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	draw_cmds := &ctx.draw_cmds
 
-	pos := ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.75, 0}
-	draw_cmds.draw_shape(Rectangle{pos, Vector2{75, 100}, 0.0}, Fawn)
+	pos :=
+		ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.5, 0} + Vector2{ui.x_start_pointer, 0}
+	size := Vector2{100, 120}
+	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
+	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
+	ui.x_start_pointer += size.x + 16
 }
 
 ui_action_bar_reset :: proc(ui: ^UiActionBar) {
-	ui.x_start_pointer = 0
+	ui.x_start_pointer = 32
 }
 
 ui_action_bar_begin_draw :: proc(ui: ^UiActionBar) {
