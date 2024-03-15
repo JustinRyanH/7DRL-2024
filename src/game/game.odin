@@ -270,7 +270,7 @@ game_draw :: proc() {
 		}
 	}
 
-	ui_area := Vector2{750, 200}
+	ui_area := Vector2{750, 120}
 	draw_cmds.draw_shape(
 		Rectangle{Vector2{width / 2, height - ui_area.y * 0.5 - 4}, ui_area, 0},
 		DriftWood,

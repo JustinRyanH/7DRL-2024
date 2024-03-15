@@ -14,7 +14,7 @@
 
 [ ] Toast whenever there is a message
 [ ] A logging system
-
+[ ] Panning with both mouse and the keyboard
 
 ### Problems to Check for
 
