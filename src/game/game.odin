@@ -295,7 +295,28 @@ game_draw :: proc() {
 		}
 	}
 
+
+	offset: f32 = 0
+	space := draw_action_card(Vector2{100 + offset, 100}, "Feint")
+	offset += space.x + 16
+	space = draw_action_card(Vector2{100 + offset, 100}, "Strike")
+	offset += space.x + 16
+	draw_action_card(Vector2{100 + offset, 100}, "Escape")
+
 	draw_mouse()
+}
+
+draw_action_card :: proc(pos: Vector2, text: cstring) -> Vector2 {
+	size: f32 = 34
+	draw_cmds := &ctx.draw_cmds
+	fnt := draw_cmds.text.load_font("assets/fonts/spellbook_large_bold.ttf")
+	txt_size := draw_cmds.text.measure_text(fnt, text, size, 0)
+
+
+	draw_cmds.draw_shape(Rectangle{pos, txt_size + Vector2{16, 16}, 0.0}, Fawn)
+	draw_cmds.text.draw(fnt, text, pos - txt_size * 0.5, size, 0, Matterhorn)
+
+	return txt_size + Vector2{16, 16}
 }
 
 @(export)
