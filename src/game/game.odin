@@ -224,6 +224,8 @@ game_draw :: proc() {
 	draw_camera := &ctx.draw_cmds.camera
 	draw_cmds.clear(Liver)
 
+	width, height := input.frame_query_dimensions(g_input)
+
 	{
 		draw_camera.begin_drawing_2d(game.camera)
 		defer draw_camera.end_drawing_2d()
@@ -267,6 +269,12 @@ game_draw :: proc() {
 			draw_cmds.draw_img(atlas_example, entity.color)
 		}
 	}
+
+	ui_area := Vector2{750, 200}
+	draw_cmds.draw_shape(
+		Rectangle{Vector2{width / 2, height - ui_area.y * 0.5 - 4}, ui_area, 0},
+		DriftWood,
+	)
 
 
 	offset: f32 = 0
