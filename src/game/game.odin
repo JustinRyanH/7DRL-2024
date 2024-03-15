@@ -113,8 +113,8 @@ game_setup :: proc() {
 	// We're doing hard reset. This will clear out any lingering handles between frame
 	g_mem^ = GameMemory{}
 
-	g_mem.scene_size.x = 800
-	g_mem.scene_size.y = 600
+	g_mem.scene_size.x = 1280
+	g_mem.scene_size.y = 800
 
 	camera := Camera2D{}
 	camera.target = Vector2{}

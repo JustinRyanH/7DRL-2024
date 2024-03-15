@@ -50,7 +50,7 @@ main :: proc() {
 	rl_platform.new_platform_storage()
 	defer rl_platform.free_platform_storage()
 
-	rl.InitWindow(800, 600, "Pathlike")
+	rl.InitWindow(1280, 800, "Pathlike")
 	rl.SetTargetFPS(FPS)
 	defer rl.CloseWindow()
 
@@ -68,6 +68,7 @@ main :: proc() {
 		fmt.println("Failed to load Game API")
 		return
 	}
+
 
 	game_api.update_ctx(ctx)
 	game_api.init()
