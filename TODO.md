@@ -15,6 +15,8 @@
 [ ] Toast whenever there is a message
 [ ] A logging system
 [ ] Panning with both mouse and the keyboard
+[ ] Black outline around mouse
+[ ] Mouse hover rotates the card
 
 ### Problems to Check for
 
