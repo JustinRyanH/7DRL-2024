@@ -98,6 +98,7 @@ UiActionBar :: struct {
 	bar_size:        Vector2,
 	x_start_pointer: f32,
 	spell_large_b:   Font,
+	action_atlas:    ImageHandle,
 }
 
 
@@ -163,6 +164,11 @@ game_setup :: proc() {
 		"assets/fonts/spellbook_large_bold.ttf",
 	)
 	g_mem.ui_action_bar.bar_size = Vector2{900, 160}
+	image, img_load_err = ctx.draw_cmds.load_img("assets/textures/pf2e_action_icons.png")
+	if img_load_err != .NoError {
+		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
+	}
+	g_mem.ui_action_bar.action_atlas = image.handle
 }
 
 @(export)
@@ -534,6 +540,14 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	draw_text_fancy(font, action.name, text_start, font_size, txt_settings)
 	draw_cmds.draw_shape(Line{line_start, line_end, 4}, JudgeGrey)
 
+
+	atlas := AtlasImage{}
+	atlas.image = ui.action_atlas
+	atlas.src.size = Vector2{16, 16}
+	atlas.pos = pos
+	atlas.size = Vector2{16, 16} * 2
+	draw_cmds.draw_img(atlas, JudgeGrey)
+
 	ui.x_start_pointer += size.x + 16
 }
 
@@ -546,6 +560,7 @@ ui_action_bar_begin_draw :: proc(ui: ^UiActionBar) {
 	ui.position = Vector2{width / 2, height - ui.bar_size.y * 0.5 - 8}
 
 
+	ctx.draw_cmds.draw_shape(Rectangle{ui.position, ui.bar_size + Vector2{8, 8}, 0}, JudgeGrey)
 	ctx.draw_cmds.draw_shape(Rectangle{ui.position, ui.bar_size, 0}, Ferra)
 }
 
