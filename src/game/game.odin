@@ -196,6 +196,13 @@ game_setup :: proc() {
 	encounter := Encounter{}
 	encounter_begin(&encounter)
 	append(&encounter.combat_queue, g_mem.character)
+	entity_iter := data_pool_new_iter(&g_mem.entities)
+	for _, handle in data_pool_iter(&entity_iter) {
+		if handle == g_mem.character {
+			continue
+		}
+		append(&encounter.combat_queue, handle)
+	}
 	g_mem.game_mode = encounter
 }
 
@@ -226,6 +233,10 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		if mode.active_entity < 0 {
 			// TODO: Later on we might do some extra prep, but for now we'll just move it to zero
 			mode.active_entity = 0
+		}
+
+		if input.was_just_released(frame_input, input.KeyboardKey.LEFT) {
+			mode.active_entity = (mode.active_entity + 1) % len(mode.combat_queue)
 		}
 	}
 	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
@@ -339,10 +350,9 @@ game_draw :: proc() {
 				target_atlas := AtlasImage{}
 				target_atlas.image = g_mem.atlas_list.transparent_color
 				map_position_to_atlas(&target_atlas, TargetPosition)
-				target_atlas.pos = entity.display_pos
+				target_atlas.pos = entity.display_pos * 16
 				target_atlas.size *= 1.2
 				target_atlas.origin = target_atlas.size * 0.5
-				fmt.println("target_atlas", target_atlas, "entity", entity)
 
 				draw_cmds.draw_img(target_atlas, WHITE)
 			}
