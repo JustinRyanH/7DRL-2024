@@ -113,8 +113,36 @@ ui_action_bar_draw_card_cost :: proc(
 ) {
 	center := Vector2{start.x + size.x * 0.5, start.y}
 
+	cost_height: f32 = 32
+
 	draw_cmds := &ctx.draw_cmds
-	draw_cmds.draw_shape(Rectangle{center, Vector2{size.x, 32}, 0}, RED)
+	draw_cmds.draw_shape(Rectangle{center, Vector2{size.x, cost_height + 8}, 0}, DriftWood)
+
+	cost_atlas := AtlasImage{}
+	cost_atlas.image = ui.action_atlas
+	cost_atlas.pos = center
+	switch action.cost {
+	case 1:
+		cost_atlas.src.size = Vector2{1, 1} * 16
+		cost_atlas.src.pos = Vector2{1, 0} * 16
+		cost_atlas.origin = Vector2{1, 1} * cost_height * 0.5
+		cost_atlas.size = Vector2{1, 1} * cost_height
+	case 2:
+		cost_atlas.src.size = Vector2{2, 1} * 16
+		cost_atlas.src.pos = Vector2{4, 0} * 16
+		cost_atlas.origin = Vector2{1.2, 1} * cost_height * 0.5
+		cost_atlas.size = Vector2{2, 1} * cost_height
+	case 3:
+		cost_atlas.src.size = Vector2{2, 1} * 16
+		cost_atlas.src.pos = Vector2{6, 0} * 16
+		cost_atlas.origin = Vector2{1.5, 1} * cost_height * 0.5
+		cost_atlas.size = Vector2{2, 1} * cost_height
+	}
+
+	if action.cost > 0 {
+		draw_cmds.draw_img(cost_atlas, JudgeGrey)
+	} else {
+	}
 }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
