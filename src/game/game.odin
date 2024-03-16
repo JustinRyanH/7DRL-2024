@@ -584,7 +584,7 @@ ActionType :: enum {
 	Request,
 	Perform,
 	CommandAnimal,
-	Mouse,
+	Mount,
 }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
