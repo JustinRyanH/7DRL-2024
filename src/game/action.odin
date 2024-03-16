@@ -26,6 +26,7 @@ ActionTraits :: enum {
 	Attack,
 	Manipulate,
 	Concentrate,
+	Exploration,
 	Visual,
 	Auditory,
 	Mental,

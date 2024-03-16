@@ -77,6 +77,28 @@ EntityAction :: union {
 
 Entities :: DataPool(128, Entity, EntityHandle)
 
+Encounter :: struct {
+	active_entity: int,
+	combat_queue:  [dynamic]EntityHandle,
+}
+
+encounter_begin :: proc(encounter: ^Encounter) {
+	encounter.active_entity = -1
+	encounter.combat_queue = make([dynamic]EntityHandle, 0, 32)
+}
+
+encounter_end :: proc(encounter: ^Encounter) {
+	delete(encounter.combat_queue)
+}
+Exploration :: struct {}
+Downtime :: struct {}
+
+GameMode :: union {
+	Encounter,
+	Exploration,
+	Downtime,
+}
+
 GameMemory :: struct {
 	scene_size:    Vector2,
 
@@ -90,6 +112,7 @@ GameMemory :: struct {
 	entities:      Entities,
 	character:     EntityHandle,
 	camera:        Camera2D,
+	game_mode:     GameMode,
 	ui_action_bar: UiActionBar,
 }
 
@@ -169,6 +192,11 @@ game_setup :: proc() {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))
 	}
 	g_mem.ui_action_bar.action_atlas = image.handle
+
+	encounter := Encounter{}
+	encounter_begin(&encounter)
+	append(&encounter.combat_queue, g_mem.character)
+	g_mem.game_mode = encounter
 }
 
 @(export)
@@ -191,41 +219,50 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	game_process_events(g_mem)
 
 	draw_camera := &ctx.draw_cmds.camera
-	screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
-	world_pos := world_pos_from_space_as_vec(screen_pos)
-	world_pos_int := world_pos_from_space(screen_pos)
 
-
-	switch action in &character.action {
-	case EntityWait:
-		character.display_pos = world_pos_to_vec(character.pos)
-
-		wpf := WorldPathfinder{}
-		world_path_finder_init(&wpf, g_mem.character, world_pos_int)
-		path_new, path_status := world_path_finder_get_path_t(wpf)
-		if path_status == .PathFound {
-			maybe_path = path_new
+	#partial switch mode in &g_mem.game_mode {
+	case Encounter:
+		assert(len(mode.combat_queue) > 0, "Hey you need a combat queue idiot")
+		if mode.active_entity < 0 {
+			// TODO: Later on we might do some extra prep, but for now we'll just move it to zero
+			mode.active_entity = 0
 		}
-
-		if input.was_just_released(frame_input, .D) {
-			character.pos += WorldPosition{1, 0}
-		}
-		if input.was_just_released(frame_input, .A) {
-			character.pos -= WorldPosition{1, 0}
-		}
-		if input.was_just_released(frame_input, .W) {
-			character.pos -= WorldPosition{0, 1}
-		}
-		if input.was_just_released(frame_input, .S) {
-			character.pos += WorldPosition{0, 1}
-		}
-
-		if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-			game_order_entity_move(g_mem, g_mem.character, maybe_path)
-		}
-	case EntityMove:
-		game_entity_handle_move_command(g_mem.character, character, &action)
 	}
+	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
+	// world_pos := world_pos_from_space_as_vec(screen_pos)
+	// world_pos_int := world_pos_from_space(screen_pos)
+
+
+	// switch action in &character.action {
+	// case EntityWait:
+	// 	character.display_pos = world_pos_to_vec(character.pos)
+
+	// 	wpf := WorldPathfinder{}
+	// 	world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+	// 	path_new, path_status := world_path_finder_get_path_t(wpf)
+	// 	if path_status == .PathFound {
+	// 		maybe_path = path_new
+	// 	}
+
+	// 	if input.was_just_released(frame_input, .D) {
+	// 		character.pos += WorldPosition{1, 0}
+	// 	}
+	// 	if input.was_just_released(frame_input, .A) {
+	// 		character.pos -= WorldPosition{1, 0}
+	// 	}
+	// 	if input.was_just_released(frame_input, .W) {
+	// 		character.pos -= WorldPosition{0, 1}
+	// 	}
+	// 	if input.was_just_released(frame_input, .S) {
+	// 		character.pos += WorldPosition{0, 1}
+	// 	}
+
+	// 	if input.was_just_released(frame_input, input.MouseButton.LEFT) {
+	// 		game_order_entity_move(g_mem, g_mem.character, maybe_path)
+	// 	}
+	// case EntityMove:
+	// 	game_entity_handle_move_command(g_mem.character, character, &action)
+	// }
 
 	char_world_pos := world_pos_to_vec(character.pos) * 16
 	camera_dist := math.length2(char_world_pos - camera.target)
@@ -288,7 +325,30 @@ game_draw :: proc() {
 			atlas_example := map_entity_to_atlas(g_mem.atlas_list.transparent_color, entity)
 			draw_cmds.draw_img(atlas_example, entity.color)
 		}
+
+		#partial switch mode in g_mem.game_mode {
+		case Encounter:
+			if mode.active_entity >= 0 && len(mode.combat_queue) > 0 {
+				e_handle := mode.combat_queue[mode.active_entity]
+				entity, exists := data_pool_get(&g_mem.entities, e_handle)
+				assert(
+					exists,
+					"There should be no reason why a in-combat entity has been despawned",
+				)
+
+				target_atlas := AtlasImage{}
+				target_atlas.image = g_mem.atlas_list.transparent_color
+				map_position_to_atlas(&target_atlas, TargetPosition)
+				target_atlas.pos = entity.display_pos
+				target_atlas.size *= 1.2
+				target_atlas.origin = target_atlas.size * 0.5
+				fmt.println("target_atlas", target_atlas, "entity", entity)
+
+				draw_cmds.draw_img(target_atlas, WHITE)
+			}
+		}
 	}
+
 
 	{
 		action_bar := &g_mem.ui_action_bar
