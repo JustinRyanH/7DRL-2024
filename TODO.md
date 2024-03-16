@@ -17,6 +17,7 @@
 [ ] Panning with both mouse and the keyboard
 [ ] Black outline around mouse
 [ ] Mouse hover rotates the card
+[ ] Display the Traits for Actions
 
 ### Problems to Check for
 
