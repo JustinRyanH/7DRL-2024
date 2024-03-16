@@ -498,7 +498,7 @@ NonCostAction :: enum {
 	Reaction   = 1,
 }
 ActionCost :: distinct int
-ActionType :: union {
+ActionExpense :: union {
 	ActionCost,
 	NonCostAction,
 }
@@ -506,7 +506,85 @@ ActionType :: union {
 CharacterAction :: struct {
 	name:       cstring,
 	name_short: cstring,
-	type:       ActionType,
+	type:       ActionExpense,
+}
+
+ActionType :: enum {
+	// Combat
+	Strike,
+	Feint,
+	Escape,
+	// Combat - Free Hand
+	Grapple,
+	Shove,
+	Trip,
+	Disarm,
+	// Magical
+	CastSpell,
+	Dismiss,
+	Substain,
+	IdentifySpell,
+	RecongizeSpell,
+	// Defensive Actions
+	AvertGaze,
+	TakeCover,
+	Parry,
+	RaiseShield,
+	ShieldBlock,
+	// Conflict
+	Delay,
+	Ready,
+	CreateDiversion,
+	BonMot,
+	Demoralize,
+	// Clock & Dagger
+	Seek,
+	PointOut,
+	Hide,
+	Sneak,
+	ConcealObject,
+	PalmObject,
+	Steal,
+	Lie,
+	SenseMove,
+	// Movement
+	Stride,
+	Step,
+	TumbleThrough,
+	// Movement - Prone
+	DropProne,
+	Crawl,
+	Stand,
+	// Movement - Vertical
+	Leap,
+	HighJump,
+	Swim,
+	Climb,
+	Balanace,
+	// Movement - In Air
+	GrabEdge,
+	ArrestFall,
+	ManeuverFlight,
+	// Object
+	Interfact,
+	Release,
+	Activate,
+	DisableDevice,
+	PickALock,
+	ForceOpen,
+	// Medicine
+	FirstAid,
+	BattleMedcine,
+	TreatWound,
+	TreatPoison,
+	TreatDisease,
+	// Other
+	Aid,
+	RecallKnowledge,
+	Request,
+	Perform,
+	CommandAnimal,
+	Mouse,
 }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
