@@ -296,8 +296,10 @@ game_draw :: proc() {
 		ui_action_bar_end_draw(action_bar)
 
 		ui_action_bar_draw_card(action_bar, CharacterAction{"Strike", 1})
-		ui_action_bar_draw_card(action_bar, CharacterAction{"Stride", 1})
-		ui_action_bar_draw_card(action_bar, CharacterAction{"Step", 1})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"First Aid", 2})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Stone", 3})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Recongize Spell", .Reaction})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Drop Weapon", .FreeAction})
 	}
 
 
@@ -500,20 +502,8 @@ CharacterAction :: struct {
 	type: ActionType,
 }
 
-// old_draw_action_card :: proc(pos: Vector2, text: cstring) -> Vector2 {
-// 	size: f32 = 34
-// 	draw_cmds := &ctx.draw_cmds
-// 	fnt := draw_cmds.text.load_font("assets/fonts/spellbook_large_bold.ttf")
-// 	txt_size := draw_cmds.text.measure_text(fnt, text, size, 0)
-// 
-// 
-// 	draw_cmds.draw_shape(Rectangle{pos, txt_size + Vector2{16, 16}, 0.0}, Fawn)
-// 	draw_cmds.text.draw(fnt, text, pos - txt_size * 0.5, size, 0, Matterhorn)
-// 
-// 	return txt_size + Vector2{16, 16}
-// }
-
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
+	// TODO: Auto Resize this if the text is too big to fit
 	font_size: f32 = 32
 	font := ui.spell_large_b
 	draw_cmds := &ctx.draw_cmds
@@ -521,17 +511,24 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 
 	pos :=
 		ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.5, 0} + Vector2{ui.x_start_pointer, 0}
-	size := Vector2{100, 120}
-	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
-	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
+	size := Vector2{100, 100}
 	line_padding := Vector2{8, 0}
 
 	text_dims := draw_cmds.text.measure_text(font, action.name, font_size, 0)
+	size_diff: f32 = 0
+	if text_dims.x > size.x {
+		size_diff = text_dims.x - size.x
+		size.x = text_dims.x + 8
+		pos.x += size_diff * 0.5
+	}
 	text_start := pos - Vector2{0, size.y * 0.5} + Vector2{0, 16}
 
 
 	line_start := text_start + Vector2{-size.x * 0.5, 24} + line_padding
 	line_end := line_start + Vector2{size.x, 0} - line_padding * 2
+
+	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
+	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
 
 
 	txt_settings := FancyTextDefaults
@@ -540,12 +537,51 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	draw_text_fancy(font, action.name, text_start, font_size, txt_settings)
 	draw_cmds.draw_shape(Line{line_start, line_end, 4}, JudgeGrey)
 
+	atlas_size := Vector2{16, 16} * 2
 
 	atlas := AtlasImage{}
 	atlas.image = ui.action_atlas
-	atlas.src.size = Vector2{16, 16}
-	atlas.pos = pos
-	atlas.size = Vector2{16, 16} * 2
+	atlas.pos = pos + Vector2{0, 16}
+
+	switch k in action.type {
+	case ActionCost:
+		switch k {
+		case 1:
+			atlas.src.size = Vector2{16, 16}
+			atlas.src.pos = Vector2{16, 0}
+			atlas.origin = atlas_size * 0.5
+			atlas.size = atlas_size
+		case 2:
+			atlas.src.size = Vector2{32, 16}
+			atlas.src.pos = Vector2{64, 0}
+			atlas.origin = atlas_size * 0.5
+			atlas.size = Vector2{32, 16} * 2
+		case 3:
+			atlas.src.size = Vector2{32, 16}
+			atlas.src.pos = Vector2{64 + 32, 0}
+			atlas.origin = atlas_size * 0.5 + Vector2{8, 0}
+			atlas.size = Vector2{32, 16} * 2
+		case:
+			panic("Unhandle Action Cost")
+
+		}
+	case NonCostAction:
+		switch k {
+		case .Reaction:
+			atlas.src.size = Vector2{16, 16}
+			atlas.src.pos = Vector2{48, 0}
+			atlas.origin = atlas_size * 0.5
+			atlas.size = Vector2{16, 16} * 2
+		case .FreeAction:
+			atlas.src.size = Vector2{16, 16}
+			atlas.src.pos = Vector2{32, 0}
+			atlas.origin = atlas_size * 0.5
+			atlas.size = Vector2{16, 16} * 2
+		}
+
+	}
+
+
 	draw_cmds.draw_img(atlas, JudgeGrey)
 
 	ui.x_start_pointer += size.x + 16
