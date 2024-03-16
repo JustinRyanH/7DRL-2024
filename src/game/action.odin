@@ -5,18 +5,19 @@ import "core:fmt"
 import "./input"
 
 OtherCost :: enum {
-	FreeAction    = 0,
+	None          = 0,
+	FreeAction    = 1,
 	// This consumers the reaction of the acting character
-	ReactionSelf  = 1,
+	ReactionSelf  = 2,
 	// This consumes the reaction of another Character
-	ReactionOther = 2,
+	ReactionOther = 3,
 }
 
 CharacterAction :: struct {
 	name:            cstring,
 	name_short:      cstring,
 	cost:            int,
-	additional_cost: bit_set[OtherCost],
+	additional_cost: OtherCost,
 	traits:          bit_set[ActionTraits],
 }
 
@@ -129,17 +130,16 @@ get_action :: proc(type: ActionType) -> (action: CharacterAction) {
 	case .RaiseShield:
 		action.name = "Raise Shield"
 		action.name_short = "Raise Shld"
-		action.additional_cost = {.ReactionSelf}
+		action.additional_cost = .ReactionSelf
 	case .Release:
 		action.name = "Release"
 		action.name_short = "Release"
-		action.additional_cost = {.FreeAction}
-
+		action.additional_cost = .FreeAction
 	case .Aid:
 		action.name = "Aid"
 		action.name_short = "Aid"
 		action.cost = 3
-		action.additional_cost = {.ReactionOther}
+		action.additional_cost = .ReactionOther
 
 
 	case:
@@ -182,42 +182,50 @@ ui_action_bar_draw_card_cost :: proc(
 	}
 
 	if action.cost > 0 {
-		if .ReactionOther in action.additional_cost {
+		if action.additional_cost != .None {
 			cost_atlas.pos -= Vector2{1, 0} * 24
 
 			atlas := AtlasImage{}
 			atlas.image = ui.action_atlas
 			atlas.pos = center + Vector2{1, 0} * 24
 			atlas.src.size = Vector2{1, 1} * 16
-			atlas.src.pos = Vector2{3, 0} * 16
 			atlas.origin = Vector2{1, 1} * cost_height * 0.5
 			atlas.size = Vector2{1, 1} * cost_height
-			draw_cmds.draw_img(atlas, Ferra)
+			color := JudgeGrey
+
+			#partial switch action.additional_cost {
+			case .ReactionOther:
+				color = Ferra
+				atlas.src.pos = Vector2{3, 0} * 16
+			case .ReactionSelf:
+				atlas.src.pos = Vector2{3, 0} * 16
+			case .FreeAction:
+				atlas.src.pos = Vector2{2, 0} * 16
+			}
+
+			draw_cmds.draw_img(atlas, color)
 		}
 
 		draw_cmds.draw_img(cost_atlas, JudgeGrey)
 	} else {
-		if .ReactionSelf in action.additional_cost {
-			atlas := AtlasImage{}
-			atlas.image = ui.action_atlas
-			atlas.pos = center
-			atlas.src.size = Vector2{1, 1} * 16
-			atlas.src.pos = Vector2{3, 0} * 16
-			atlas.origin = Vector2{1, 1} * cost_height * 0.5
-			atlas.size = Vector2{1, 1} * cost_height
-			draw_cmds.draw_img(atlas, JudgeGrey)
-		}
-		if .FreeAction in action.additional_cost {
-			atlas := AtlasImage{}
-			atlas.image = ui.action_atlas
-			atlas.pos = center
-			atlas.src.size = Vector2{1, 1} * 16
-			atlas.src.pos = Vector2{2, 0} * 16
-			atlas.origin = Vector2{1, 1} * cost_height * 0.5
-			atlas.size = Vector2{1, 1} * cost_height
-			draw_cmds.draw_img(atlas, JudgeGrey)
+		atlas := AtlasImage{}
+		atlas.image = ui.action_atlas
+		atlas.pos = center
+		atlas.src.size = Vector2{1, 1} * 16
+		atlas.origin = Vector2{1, 1} * cost_height * 0.5
+		atlas.size = Vector2{1, 1} * cost_height
+		color := JudgeGrey
 
+		#partial switch action.additional_cost {
+		case .ReactionOther:
+			color = Ferra
+			atlas.src.pos = Vector2{3, 0} * 16
+		case .ReactionSelf:
+			atlas.src.pos = Vector2{3, 0} * 16
+		case .FreeAction:
+			atlas.src.pos = Vector2{2, 0} * 16
 		}
+		draw_cmds.draw_img(atlas, color)
 	}
 }
 
