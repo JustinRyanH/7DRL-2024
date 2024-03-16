@@ -24,6 +24,7 @@
 [ ] Mouse hover rotates the card
 [ ] Display the Traits for Actions
 [ ] Only use the White atlas, and pick the colors from the pallete
+[ ] Origin can be an enum or a position
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
