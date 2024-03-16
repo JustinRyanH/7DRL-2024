@@ -3,12 +3,17 @@
 [ ] Paths
 ## 2024-03-03
 
-[ ] Render Character on Screen
-[ ] Get Character Grid Movement Going (Mouse and Click)
+[x] Render Character on Screen
+[x] Get Character Grid Movement Going (Mouse and Click)
+[x] Add Enemies
+[-] Combat
 [ ] Build Map
 [ ] Generate Dungeon
-[ ] Add Enemies
-[ ] Combat
+
+## Combat
+
+[ ] Turns
+[ ] Actions
 
 ### Nice to Haves
 
@@ -18,6 +23,13 @@
 [ ] Black outline around mouse
 [ ] Mouse hover rotates the card
 [ ] Display the Traits for Actions
+[ ] Only use the White atlas, and pick the colors from the pallete
+
+## Actions GUI
+[ ] Do a Scissoring on the Cards
+[ ] Allow Actions to be Scroll
+[ ] Have a Deck to Search for Actions
+[ ] Allow Text Search for Action (Steam Deck)
 
 ### Problems to Check for
 
