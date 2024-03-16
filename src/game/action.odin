@@ -1,5 +1,7 @@
 package game
 
+import "core:fmt"
+
 import "./input"
 
 NonCostAction :: enum {
@@ -94,6 +96,14 @@ ActionType :: enum {
 	Perform,
 	CommandAnimal,
 	Mount,
+}
+
+get_action :: proc(type: ActionType) -> (action: CharacterAction) {
+	switch {
+	case:
+		panic(fmt.tprintf("Unimplemented Case %v", type))
+	}
+	return
 }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
