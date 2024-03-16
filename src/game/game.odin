@@ -295,11 +295,17 @@ game_draw :: proc() {
 		ui_action_bar_begin_draw(action_bar)
 		ui_action_bar_end_draw(action_bar)
 
-		ui_action_bar_draw_card(action_bar, CharacterAction{"Strike", 1})
-		ui_action_bar_draw_card(action_bar, CharacterAction{"First Aid", 2})
-		ui_action_bar_draw_card(action_bar, CharacterAction{"Stone", 3})
-		ui_action_bar_draw_card(action_bar, CharacterAction{"Recongize Spell", .Reaction})
-		ui_action_bar_draw_card(action_bar, CharacterAction{"Drop Weapon", .FreeAction})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Strike", "Strike", 1})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"First Aid", "F. Aid", 2})
+		ui_action_bar_draw_card(action_bar, CharacterAction{"Lie", "Lie", 3})
+		ui_action_bar_draw_card(
+			action_bar,
+			CharacterAction{"Grab an Edge", "Grab Edge", .Reaction},
+		)
+		ui_action_bar_draw_card(
+			action_bar,
+			CharacterAction{"Drop Weapon", "Dp. Weapon", .FreeAction},
+		)
 	}
 
 
@@ -498,13 +504,14 @@ ActionType :: union {
 }
 
 CharacterAction :: struct {
-	name: cstring,
-	type: ActionType,
+	name:       cstring,
+	name_short: cstring,
+	type:       ActionType,
 }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	// TODO: Auto Resize this if the text is too big to fit
-	font_size: f32 = 32
+	font_size: f32 = 24
 	font := ui.spell_large_b
 	draw_cmds := &ctx.draw_cmds
 
@@ -514,7 +521,7 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	size := Vector2{100, 100}
 	line_padding := Vector2{8, 0}
 
-	text_dims := draw_cmds.text.measure_text(font, action.name, font_size, 0)
+	text_dims := draw_cmds.text.measure_text(font, action.name_short, font_size, 0)
 	size_diff: f32 = 0
 	if text_dims.x > size.x {
 		size_diff = text_dims.x - size.x
@@ -534,7 +541,7 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	txt_settings := FancyTextDefaults
 	txt_settings.color = JudgeGrey
 	txt_settings.alignment = .Middle
-	draw_text_fancy(font, action.name, text_start, font_size, txt_settings)
+	draw_text_fancy(font, action.name_short, text_start, font_size, txt_settings)
 	draw_cmds.draw_shape(Line{line_start, line_end, 4}, JudgeGrey)
 
 	atlas_size := Vector2{16, 16} * 2
