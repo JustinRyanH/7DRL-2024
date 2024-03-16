@@ -24,6 +24,21 @@ CharacterAction :: struct {
 	cost:             int,
 	additional_cost:  bit_set[OtherCost],
 	combine_operator: CombinedCostOperator,
+	traits:           bit_set[ActionTraits],
+}
+
+ActionTraits :: enum {
+	Move,
+	Attack,
+	Manipulate,
+	Concentrate,
+	Visual,
+	Auditory,
+	Mental,
+	Emotion,
+	Feat,
+	Linguistic,
+	Secret,
 }
 
 ActionType :: enum {
@@ -109,6 +124,14 @@ get_action :: proc(type: ActionType) -> (action: CharacterAction) {
 	case .Strike:
 		action.name = "Strike"
 		action.name_short = "Strike"
+		action.cost = 1
+	case .Feint:
+		action.name = "Feint"
+		action.name_short = "Feint"
+		action.cost = 1
+	case .Escape:
+		action.name = "Escape"
+		action.name_short = "Escape"
 		action.cost = 1
 	case .RaiseShield:
 		action.name = "Raise Shield"
