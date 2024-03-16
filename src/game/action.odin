@@ -4,20 +4,16 @@ import "core:fmt"
 
 import "./input"
 
-NonCostAction :: enum {
+OtherCost :: enum {
 	FreeAction = 0,
 	Reaction   = 1,
 }
-ActionCost :: distinct int
-ActionExpense :: union {
-	ActionCost,
-	NonCostAction,
-}
 
 CharacterAction :: struct {
-	name:       cstring,
-	name_short: cstring,
-	type:       ActionExpense,
+	name:            cstring,
+	name_short:      cstring,
+	cost:            int,
+	additional_cost: bit_set[OtherCost],
 }
 
 ActionType :: enum {
@@ -99,11 +95,26 @@ ActionType :: enum {
 }
 
 get_action :: proc(type: ActionType) -> (action: CharacterAction) {
-	switch {
+	#partial switch type {
+	case .Strike:
+		action.name = "Strike"
+		action.name_short = "Strike"
+		action.cost = 1
 	case:
 		panic(fmt.tprintf("Unimplemented Case %v", type))
 	}
 	return
+}
+
+ui_action_bar_draw_card_cost :: proc(
+	ui: ^UiActionBar,
+	action: CharacterAction,
+	start, size: Vector2,
+) {
+	center := Vector2{start.x + size.x * 0.5, start.y}
+
+	draw_cmds := &ctx.draw_cmds
+	draw_cmds.draw_shape(Rectangle{center, Vector2{size.x, 32}, 0}, RED)
 }
 
 ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
@@ -141,52 +152,54 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	draw_text_fancy(font, action.name_short, text_start, font_size, txt_settings)
 	draw_cmds.draw_shape(Line{line_start, line_end, 4}, JudgeGrey)
 
-	atlas_size := Vector2{16, 16} * 2
+	ui_action_bar_draw_card_cost(ui, action, pos + Vector2{-size.x * 0.5, 24}, size.x)
 
-	atlas := AtlasImage{}
-	atlas.image = ui.action_atlas
-	atlas.pos = pos + Vector2{0, 16}
+	// atlas_size := Vector2{16, 16} * 2
 
-	switch k in action.type {
-	case ActionCost:
-		switch k {
-		case 1:
-			atlas.src.size = Vector2{16, 16}
-			atlas.src.pos = Vector2{16, 0}
-			atlas.origin = atlas_size * 0.5
-			atlas.size = atlas_size
-		case 2:
-			atlas.src.size = Vector2{32, 16}
-			atlas.src.pos = Vector2{64, 0}
-			atlas.origin = atlas_size * 0.5
-			atlas.size = Vector2{32, 16} * 2
-		case 3:
-			atlas.src.size = Vector2{32, 16}
-			atlas.src.pos = Vector2{64 + 32, 0}
-			atlas.origin = atlas_size * 0.5 + Vector2{8, 0}
-			atlas.size = Vector2{32, 16} * 2
-		case:
-			panic("Unhandle Action Cost")
+	// atlas := AtlasImage{}
+	// atlas.image = ui.action_atlas
+	// atlas.pos = pos + Vector2{0, 16}
 
-		}
-	case NonCostAction:
-		switch k {
-		case .Reaction:
-			atlas.src.size = Vector2{16, 16}
-			atlas.src.pos = Vector2{48, 0}
-			atlas.origin = atlas_size * 0.5
-			atlas.size = Vector2{16, 16} * 2
-		case .FreeAction:
-			atlas.src.size = Vector2{16, 16}
-			atlas.src.pos = Vector2{32, 0}
-			atlas.origin = atlas_size * 0.5
-			atlas.size = Vector2{16, 16} * 2
-		}
+	// switch k in action.type {
+	// case ActionCost:
+	// 	switch k {
+	// 	case 1:
+	// 		atlas.src.size = Vector2{16, 16}
+	// 		atlas.src.pos = Vector2{16, 0}
+	// 		atlas.origin = atlas_size * 0.5
+	// 		atlas.size = atlas_size
+	// 	case 2:
+	// 		atlas.src.size = Vector2{32, 16}
+	// 		atlas.src.pos = Vector2{64, 0}
+	// 		atlas.origin = atlas_size * 0.5
+	// 		atlas.size = Vector2{32, 16} * 2
+	// 	case 3:
+	// 		atlas.src.size = Vector2{32, 16}
+	// 		atlas.src.pos = Vector2{64 + 32, 0}
+	// 		atlas.origin = atlas_size * 0.5 + Vector2{8, 0}
+	// 		atlas.size = Vector2{32, 16} * 2
+	// 	case:
+	// 		panic("Unhandle Action Cost")
 
-	}
+	// 	}
+	// case NonCostAction:
+	// 	switch k {
+	// 	case .Reaction:
+	// 		atlas.src.size = Vector2{16, 16}
+	// 		atlas.src.pos = Vector2{48, 0}
+	// 		atlas.origin = atlas_size * 0.5
+	// 		atlas.size = Vector2{16, 16} * 2
+	// 	case .FreeAction:
+	// 		atlas.src.size = Vector2{16, 16}
+	// 		atlas.src.pos = Vector2{32, 0}
+	// 		atlas.origin = atlas_size * 0.5
+	// 		atlas.size = Vector2{16, 16} * 2
+	// 	}
+
+	// }
 
 
-	draw_cmds.draw_img(atlas, JudgeGrey)
+	// draw_cmds.draw_img(atlas, JudgeGrey)
 
 	ui.x_start_pointer += size.x + 16
 }
