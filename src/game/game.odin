@@ -296,6 +296,8 @@ game_draw :: proc() {
 		ui_action_bar_end_draw(action_bar)
 
 		ui_action_bar_draw_card(action_bar, get_action(.Strike))
+		ui_action_bar_draw_card(action_bar, get_action(.RaiseShield))
+		ui_action_bar_draw_card(action_bar, get_action(.Release))
 		// ui_action_bar_draw_card(action_bar, CharacterAction{"First Aid", "F. Aid", 2})
 		// ui_action_bar_draw_card(action_bar, CharacterAction{"Lie", "Lie", 3})
 		// ui_action_bar_draw_card(

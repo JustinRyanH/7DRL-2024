@@ -4,16 +4,26 @@ import "core:fmt"
 
 import "./input"
 
+CombinedCostOperator :: enum {
+	None = 0,
+	And,
+	Or,
+}
+
 OtherCost :: enum {
-	FreeAction = 0,
-	Reaction   = 1,
+	FreeAction    = 0,
+	// This consumers the reaction of the acting character
+	ReactionSelf  = 1,
+	// This consumes the reaction of another Character
+	ReactionOther = 2,
 }
 
 CharacterAction :: struct {
-	name:            cstring,
-	name_short:      cstring,
-	cost:            int,
-	additional_cost: bit_set[OtherCost],
+	name:             cstring,
+	name_short:       cstring,
+	cost:             int,
+	additional_cost:  bit_set[OtherCost],
+	combine_operator: CombinedCostOperator,
 }
 
 ActionType :: enum {
@@ -100,6 +110,15 @@ get_action :: proc(type: ActionType) -> (action: CharacterAction) {
 		action.name = "Strike"
 		action.name_short = "Strike"
 		action.cost = 1
+	case .RaiseShield:
+		action.name = "Raise Shield"
+		action.name_short = "Raise Shld"
+		action.additional_cost = {.ReactionSelf}
+	case .Release:
+		action.name = "Release"
+		action.name_short = "Release"
+		action.additional_cost = {.FreeAction}
+
 	case:
 		panic(fmt.tprintf("Unimplemented Case %v", type))
 	}
@@ -142,6 +161,27 @@ ui_action_bar_draw_card_cost :: proc(
 	if action.cost > 0 {
 		draw_cmds.draw_img(cost_atlas, JudgeGrey)
 	} else {
+		if .ReactionSelf in action.additional_cost {
+			atlas := AtlasImage{}
+			atlas.image = ui.action_atlas
+			atlas.pos = center
+			atlas.src.size = Vector2{1, 1} * 16
+			atlas.src.pos = Vector2{3, 0} * 16
+			atlas.origin = Vector2{1, 1} * cost_height * 0.5
+			atlas.size = Vector2{1, 1} * cost_height
+			draw_cmds.draw_img(atlas, JudgeGrey)
+		}
+		if .FreeAction in action.additional_cost {
+			atlas := AtlasImage{}
+			atlas.image = ui.action_atlas
+			atlas.pos = center
+			atlas.src.size = Vector2{1, 1} * 16
+			atlas.src.pos = Vector2{2, 0} * 16
+			atlas.origin = Vector2{1, 1} * cost_height * 0.5
+			atlas.size = Vector2{1, 1} * cost_height
+			draw_cmds.draw_img(atlas, JudgeGrey)
+
+		}
 	}
 }
 
@@ -228,7 +268,6 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 
 
 	// draw_cmds.draw_img(atlas, JudgeGrey)
-
 	ui.x_start_pointer += size.x + 16
 }
 
