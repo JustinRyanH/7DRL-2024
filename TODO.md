@@ -27,6 +27,8 @@
 [ ] Origin can be an enum or a position
 [ ] Display Hands for the Selected Items
 [ ] Display a Portait for Selected
+[ ] I think I need an action system that stories itself in a DataPool, so I can have
+multi-frame actions
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
