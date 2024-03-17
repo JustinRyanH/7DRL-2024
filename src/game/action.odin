@@ -114,6 +114,15 @@ ActionType :: enum {
 	Mount,
 }
 
+UiActionBar :: struct {
+	position:        Vector2,
+	bar_size:        Vector2,
+	x_start_pointer: f32,
+	spell_large_b:   Font,
+	action_atlas:    ImageHandle,
+	selected_action: u64,
+}
+
 get_action :: proc(type: ActionType) -> (action: CharacterAction) {
 	#partial switch type {
 	case .Strike:
@@ -244,6 +253,10 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	font := ui.spell_large_b
 	draw_cmds := &ctx.draw_cmds
 
+	id := get_action_id(action)
+	if ui.selected_action == 0 {
+		ui.selected_action = id
+	}
 
 	pos :=
 		ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.5, 0} + Vector2{ui.x_start_pointer, 0}
@@ -259,13 +272,15 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	}
 	text_start := pos - Vector2{0, size.y * 0.5} + Vector2{0, 16}
 
-
 	line_start := text_start + Vector2{-size.x * 0.5, 24} + line_padding
 	line_end := line_start + Vector2{size.x, 0} - line_padding * 2
 
 	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
-	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
-
+	if ui.selected_action == id {
+		draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, RED)
+	} else {
+		draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
+	}
 
 	txt_settings := FancyTextDefaults
 	txt_settings.color = JudgeGrey
@@ -291,3 +306,9 @@ ui_action_bar_begin_draw :: proc(ui: ^UiActionBar) {
 }
 
 ui_action_bar_end_draw :: proc(ui: ^UiActionBar) {}
+
+@(private = "file")
+get_action_id :: proc(action: CharacterAction) -> u64 {
+	return generate_u64_from_cstring(action.name)
+
+}

@@ -157,15 +157,6 @@ GameMemory :: struct {
 	ui_action_bar: UiActionBar,
 }
 
-UiActionBar :: struct {
-	position:        Vector2,
-	bar_size:        Vector2,
-	x_start_pointer: f32,
-	spell_large_b:   Font,
-	action_atlas:    ImageHandle,
-}
-
-
 ctx: ^Context
 g_input: input.FrameInput
 g_mem: ^GameMemory
