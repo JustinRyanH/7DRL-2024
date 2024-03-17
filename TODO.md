@@ -1,6 +1,9 @@
 # TODO
 
-[ ] Paths
+[ ] Create a System to display the current proposed action
+[ ] Disable the In-accessible actions
+[ ] Add a Next Turn Button
+
 ## 2024-03-03
 
 [x] Render Character on Screen
@@ -12,7 +15,7 @@
 
 ## Combat
 
-[ ] Turns
+[x] Turns
 [ ] Actions
 
 ### Nice to Haves
