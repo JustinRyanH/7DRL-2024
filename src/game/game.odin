@@ -100,6 +100,10 @@ encounter_end :: proc(encounter: ^Encounter) {
 	delete(encounter.display_actions)
 }
 
+encounter_next_character :: proc(encounter: ^Encounter) {
+	encounter.active_entity = (encounter.active_entity + 1) % len(encounter.combat_queue)
+}
+
 Exploration :: struct {}
 Downtime :: struct {}
 
@@ -246,7 +250,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 
 		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
-			mode.active_entity = (mode.active_entity + 1) % len(mode.combat_queue)
+			encounter_next_character(&mode)
 		}
 	}
 	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
