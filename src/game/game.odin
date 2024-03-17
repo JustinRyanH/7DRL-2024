@@ -77,9 +77,14 @@ EntityAction :: union {
 
 Entities :: DataPool(128, Entity, EntityHandle)
 
+EncounterUi :: struct {
+	select_pulse_time: f32,
+}
+
 Encounter :: struct {
 	active_entity: int,
 	combat_queue:  [dynamic]EntityHandle,
+	ui:            EncounterUi,
 }
 
 encounter_begin :: proc(encounter: ^Encounter) {
@@ -338,7 +343,7 @@ game_draw :: proc() {
 			draw_cmds.draw_img(atlas_example, entity.color)
 		}
 
-		#partial switch mode in g_mem.game_mode {
+		#partial switch mode in &g_mem.game_mode {
 		case Encounter:
 			if mode.active_entity >= 0 && len(mode.combat_queue) > 0 {
 				e_handle := mode.combat_queue[mode.active_entity]
@@ -348,16 +353,12 @@ game_draw :: proc() {
 					"There should be no reason why a in-combat entity has been despawned",
 				)
 
-				@(static)
-				size: f32 = 0
-				size += dt * 6.25
-				if size > math.TAU {
-					size = 0
+				mode.ui.select_pulse_time += dt * 4
+				if mode.ui.select_pulse_time > math.TAU {
+					mode.ui.select_pulse_time = 0
 				}
 				low_factor: f32 = 1.2
-				high_factor: f32 = 1.5
-				k := (math.sin(size) + 1) / 2
-
+				high_factor: f32 = 1.4
 
 				target_atlas := AtlasImage{}
 				target_atlas.image = g_mem.atlas_list.transparent_color
@@ -366,6 +367,7 @@ game_draw :: proc() {
 				old_size := target_atlas.size
 
 
+				k := pulse_value(mode.ui.select_pulse_time)
 				target_atlas.size = math.lerp(old_size * low_factor, old_size * high_factor, k)
 				target_atlas.origin = target_atlas.size * 0.5
 
@@ -579,3 +581,7 @@ game_entity_handle_move_command :: proc(
 }
 
 max_walk_count := 128
+
+pulse_value :: proc(v: f32) -> f32 {
+	return (math.sin(v) + 1) / 2
+}
