@@ -82,19 +82,24 @@ EncounterUi :: struct {
 }
 
 Encounter :: struct {
-	active_entity: int,
-	combat_queue:  [dynamic]EntityHandle,
-	ui:            EncounterUi,
+	active_entity:   int,
+	combat_queue:    [dynamic]EntityHandle,
+	display_actions: [dynamic]CharacterAction,
+	ui:              EncounterUi,
+	actions_left:    int,
 }
 
 encounter_begin :: proc(encounter: ^Encounter) {
 	encounter.active_entity = -1
 	encounter.combat_queue = make([dynamic]EntityHandle, 0, 32)
+	encounter.display_actions = make([dynamic]CharacterAction, 0, 32)
 }
 
 encounter_end :: proc(encounter: ^Encounter) {
 	delete(encounter.combat_queue)
+	delete(encounter.display_actions)
 }
+
 Exploration :: struct {}
 Downtime :: struct {}
 
