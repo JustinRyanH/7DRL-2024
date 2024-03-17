@@ -235,7 +235,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			mode.active_entity = 0
 		}
 
-		if input.was_just_released(frame_input, input.KeyboardKey.LEFT) {
+		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
 			mode.active_entity = (mode.active_entity + 1) % len(mode.combat_queue)
 		}
 	}
@@ -293,6 +293,7 @@ game_draw :: proc() {
 	draw_cmds.clear(Liver)
 
 	width, height := input.frame_query_dimensions(g_input)
+	dt := input.frame_query_delta(g_input)
 
 	{
 		draw_camera.begin_drawing_2d(game.camera)
@@ -347,11 +348,25 @@ game_draw :: proc() {
 					"There should be no reason why a in-combat entity has been despawned",
 				)
 
+				@(static)
+				size: f32 = 0
+				size += dt * 6.25
+				if size > math.TAU {
+					size = 0
+				}
+				low_factor: f32 = 1.2
+				high_factor: f32 = 1.5
+				k := (math.sin(size) + 1) / 2
+
+
 				target_atlas := AtlasImage{}
 				target_atlas.image = g_mem.atlas_list.transparent_color
 				map_position_to_atlas(&target_atlas, TargetPosition)
 				target_atlas.pos = entity.display_pos * 16
-				target_atlas.size *= 1.2
+				old_size := target_atlas.size
+
+
+				target_atlas.size = math.lerp(old_size * low_factor, old_size * high_factor, k)
 				target_atlas.origin = target_atlas.size * 0.5
 
 				draw_cmds.draw_img(target_atlas, WHITE)
