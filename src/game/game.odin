@@ -105,8 +105,30 @@ encounter_end :: proc(encounter: ^Encounter) {
 	delete(encounter.display_actions)
 }
 
+
+encounter_get_active_ptr :: proc(encounter: ^Encounter) -> (ent: ^Entity) {
+	if (encounter.active_entity < 0 || len(encounter.combat_queue) == 0) {
+		return
+	}
+	return data_pool_get_ptr(&g_mem.entities, encounter.combat_queue[encounter.active_entity])
+}
+
+// This is a Multi-Frame Action, So this needs to be cleaned up for that later
 encounter_next_character :: proc(encounter: ^Encounter) {
+	// TODO: This shouldn't be cleared, but an event, so we can abnimate this out
+	clear(&encounter.display_actions)
 	encounter.active_entity = (encounter.active_entity + 1) % len(encounter.combat_queue)
+	encounter.actions_left = 3
+	entity := encounter_get_active_ptr(encounter)
+	assert(entity != nil, "The Entity should always exists here")
+	if .Pc in entity.tags {
+		// TODO: this should be an event, so we can animate them onto the board
+		append(&encounter.display_actions, get_action(.Strike))
+		append(&encounter.display_actions, get_action(.Stride))
+		append(&encounter.display_actions, get_action(.Step))
+
+	}
+
 }
 
 Exploration :: struct {}
@@ -250,8 +272,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	case Encounter:
 		assert(len(mode.combat_queue) > 0, "Hey you need a combat queue idiot")
 		if mode.active_entity < 0 {
-			// TODO: Later on we might do some extra prep, but for now we'll just move it to zero
-			mode.active_entity = 0
+			encounter_next_character(&mode)
 		}
 
 		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
@@ -391,15 +412,17 @@ game_draw :: proc() {
 	}
 
 
-	{
-		action_bar := &g_mem.ui_action_bar
-		ui_action_bar_begin_draw(action_bar)
-		ui_action_bar_end_draw(action_bar)
+	#partial switch mode in &g_mem.game_mode {
+	case Encounter:
+		{
+			action_bar := &g_mem.ui_action_bar
+			ui_action_bar_begin_draw(action_bar)
+			ui_action_bar_end_draw(action_bar)
 
-		ui_action_bar_draw_card(action_bar, get_action(.Strike))
-		ui_action_bar_draw_card(action_bar, get_action(.RaiseShield))
-		ui_action_bar_draw_card(action_bar, get_action(.Release))
-		ui_action_bar_draw_card(action_bar, get_action(.Aid))
+			for action in mode.display_actions {
+				ui_action_bar_draw_card(action_bar, action)
+			}
+		}
 	}
 
 	draw_mouse()

@@ -136,6 +136,14 @@ get_action :: proc(type: ActionType) -> (action: CharacterAction) {
 		action.name = "Release"
 		action.name_short = "Release"
 		action.additional_cost = .FreeAction
+	case .Stride:
+		action.name = "Stride"
+		action.name_short = "Stride"
+		action.cost = 1
+	case .Step:
+		action.name = "Step"
+		action.name_short = "Step"
+		action.cost = 1
 	case .Aid:
 		action.name = "Aid"
 		action.name_short = "Aid"
