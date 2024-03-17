@@ -388,14 +388,6 @@ game_draw :: proc() {
 		ui_action_bar_draw_card(action_bar, get_action(.Aid))
 	}
 
-
-	// offset: f32 = 0
-	// space := draw_action_card(Vector2{100 + offset, 100}, "Feint")
-	// offset += space.x + 16
-	// space = draw_action_card(Vector2{100 + offset, 100}, "Strike")
-	// offset += space.x + 16
-	// draw_action_card(Vector2{100 + offset, 100}, "Escape")
-
 	draw_mouse()
 }
 
