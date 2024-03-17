@@ -18,6 +18,7 @@ CharacterAction :: struct {
 	name_short:      cstring,
 	cost:            int,
 	additional_cost: OtherCost,
+	type:            ActionType,
 	traits:          bit_set[ActionTraits],
 }
 
@@ -166,6 +167,7 @@ get_action :: proc(type: ActionType) -> (action: CharacterAction) {
 	case:
 		panic(fmt.tprintf("Unimplemented Case %v", type))
 	}
+	action.type = type
 	return
 }
 

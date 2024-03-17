@@ -86,11 +86,36 @@ EncounterUi :: struct {
 	select_pulse_time: f32,
 }
 
+// Likely will include other kinds like Fly, Swim, ect.
+MovementKind :: enum {
+	Step,
+	Stride,
+}
+
+WaitingMovement :: struct {
+	// TempAllocator, remove for every frame
+	path: []Step,
+	kind: MovementKind,
+}
+
+PerformingMovement :: struct {
+	// StdAlloxator, needs to be cleaned up when removed
+	path:         []Step,
+	current_step: int,
+	percentage:   f32,
+}
+
+EncounterState :: union {
+	PerformingMovement,
+	WaitingMovement,
+}
+
 Encounter :: struct {
 	active_entity:   int,
 	combat_queue:    [dynamic]EntityHandle,
 	display_actions: [dynamic]CharacterAction,
 	ui:              EncounterUi,
+	state:           EncounterState,
 	actions_left:    int,
 	active_action:   int,
 }
@@ -106,6 +131,18 @@ encounter_end :: proc(encounter: ^Encounter) {
 	delete(encounter.display_actions)
 }
 
+encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
+	#partial switch action.type {
+	case .Stride:
+		wait := WaitingMovement{}
+		wait.kind = .Stride
+		encounter.state = wait
+	case .Step:
+		wait := WaitingMovement{}
+		wait.kind = .Step
+		encounter.state = wait
+	}
+}
 
 encounter_get_active_ptr :: proc(encounter: ^Encounter) -> (ent: ^Entity) {
 	if (encounter.active_entity < 0 || len(encounter.combat_queue) == 0) {
@@ -142,7 +179,7 @@ encounter_preview_next_action :: proc(encounter: ^Encounter) {
 
 encounter_selected_action :: proc(encounter: ^Encounter) -> (CharacterAction, bool) {
 	num_of_actions := len(encounter.display_actions)
-	if num_of_actions && encounter.active_action < num_of_actions {
+	if num_of_actions > 0 && encounter.active_action < num_of_actions {
 		action := encounter.display_actions[encounter.active_action]
 		return action, true
 	}
@@ -292,13 +329,30 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			encounter_preview_next_action(&mode)
 		}
 
+		entity := encounter_get_active_ptr(&mode)
+		// TODO: Only do this we are not actually acting
 		action, exists := encounter_selected_action(&mode)
 		if exists {
+			encounter_begin_wait(&mode, action)
+		}
+
+		#partial switch state in &mode.state {
+		case WaitingMovement:
+			screen_pos := draw_camera.screen_to_world_2d(
+				g_mem.camera,
+				input.mouse_position(g_input),
+			)
+			world_pos := world_pos_from_space_as_vec(screen_pos)
+			world_pos_int := world_pos_from_space(screen_pos)
+
+			wpf := WorldPathfinder{}
+			world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+			path_new, path_status := world_path_finder_get_path_t(wpf)
+			if path_status == .PathFound {
+				state.path = path_new
+			}
 		}
 	}
-	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
-	// world_pos := world_pos_from_space_as_vec(screen_pos)
-	// world_pos_int := world_pos_from_space(screen_pos)
 
 
 	// switch action in &character.action {
@@ -397,14 +451,9 @@ game_draw :: proc() {
 
 		#partial switch mode in &g_mem.game_mode {
 		case Encounter:
+			entity := encounter_get_active_ptr(&mode)
+			assert(entity != nil, "Entity Should not be despawned")
 			if mode.active_entity >= 0 && len(mode.combat_queue) > 0 {
-				e_handle := mode.combat_queue[mode.active_entity]
-				entity, exists := data_pool_get(&g_mem.entities, e_handle)
-				assert(
-					exists,
-					"There should be no reason why a in-combat entity has been despawned",
-				)
-
 				mode.ui.select_pulse_time += dt * 4
 				if mode.ui.select_pulse_time > math.TAU {
 					mode.ui.select_pulse_time = 0
@@ -424,6 +473,12 @@ game_draw :: proc() {
 				target_atlas.origin = target_atlas.size * 0.5
 
 				draw_cmds.draw_img(target_atlas, WHITE)
+			}
+
+			#partial switch state in &mode.state {
+			case WaitingMovement:
+				draw_proposed_path(state.path, state.kind, entity)
+
 			}
 		}
 	}
@@ -619,4 +674,46 @@ max_walk_count := 128
 
 pulse_value :: proc(v: f32) -> f32 {
 	return (math.sin(v) + 1) / 2
+}
+
+draw_proposed_path :: proc(path: []Step, movemnt_kind: MovementKind, entity: ^Entity) {
+	draw_cmds := ctx.draw_cmds
+	draw_camera := &ctx.draw_cmds.camera
+
+	total_cost := 0
+	step_count := 0
+	#reverse for step in path {
+		p := step.position
+		if p == entity.pos {
+			continue
+		}
+		step_count += 1
+		total_cost += step.step_cost
+
+		color := Color{1, 0, 0, 0.5}
+		switch movemnt_kind {
+		case .Step:
+			if total_cost > 1 {
+				color.a = 0.2
+			}
+		case .Stride:
+			if total_cost > entity.movement_speed {
+				color.a = 0.2
+			}
+		}
+
+		draw_cmds.draw_shape(Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0}, color)
+	}
+	if len(path) > 0 {
+		total_cost := step_total_cost(path)
+
+		screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
+		draw_cmds.draw_text(
+			fmt.ctprintf("%dft", total_cost * 5),
+			cast(i32)screen_pos.x,
+			cast(i32)screen_pos.y + 10,
+			8,
+			RED,
+		)
+	}
 }
