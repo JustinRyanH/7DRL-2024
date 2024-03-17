@@ -125,7 +125,6 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 	assert(entity != nil, "The Entity should always exists here")
 	if .Pc in entity.tags {
 		// TODO: this should be an event, so we can animate them onto the board
-		append(&encounter.display_actions, get_action(.Strike))
 		append(&encounter.display_actions, get_action(.Stride))
 		append(&encounter.display_actions, get_action(.Step))
 	}
@@ -135,10 +134,19 @@ encounter_preview_next_action :: proc(encounter: ^Encounter) {
 	num_of_actions := len(encounter.display_actions)
 	if num_of_actions > 0 {
 		encounter.active_action += 1
-		if encounter.active_action > num_of_actions {
+		if encounter.active_action >= num_of_actions {
 			encounter.active_action = 0
 		}
 	}
+}
+
+encounter_selected_action :: proc(encounter: ^Encounter) -> (CharacterAction, bool) {
+	num_of_actions := len(encounter.display_actions)
+	if num_of_actions && encounter.active_action < num_of_actions {
+		action := encounter.display_actions[encounter.active_action]
+		return action, true
+	}
+	return CharacterAction{}, false
 }
 
 Exploration :: struct {}
@@ -282,6 +290,10 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 
 		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
 			encounter_preview_next_action(&mode)
+		}
+
+		action, exists := encounter_selected_action(&mode)
+		if exists {
 		}
 	}
 	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
