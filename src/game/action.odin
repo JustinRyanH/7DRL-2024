@@ -120,7 +120,10 @@ UiActionBar :: struct {
 	x_start_pointer: f32,
 	spell_large_b:   Font,
 	action_atlas:    ImageHandle,
-	selected_action: u64,
+}
+
+UiActionMeta :: struct {
+	is_selected: bool,
 }
 
 get_action :: proc(type: ActionType) -> (action: CharacterAction) {
@@ -247,20 +250,17 @@ ui_action_bar_draw_card_cost :: proc(
 	}
 }
 
-ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
+ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction, meta: UiActionMeta) {
 	// TODO: Auto Resize this if the text is too big to fit
 	font_size: f32 = 24
 	font := ui.spell_large_b
 	draw_cmds := &ctx.draw_cmds
 
 	id := get_action_id(action)
-	if ui.selected_action == 0 {
-		ui.selected_action = id
-	}
 
 	pos :=
 		ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.5, 0} + Vector2{ui.x_start_pointer, 0}
-	if ui.selected_action == id {
+	if meta.is_selected {
 		pos += Vector2{0, -8}
 	}
 	size := Vector2{100, 100}

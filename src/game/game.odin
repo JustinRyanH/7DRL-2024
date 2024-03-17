@@ -92,7 +92,7 @@ Encounter :: struct {
 	display_actions: [dynamic]CharacterAction,
 	ui:              EncounterUi,
 	actions_left:    int,
-	selected_action: int,
+	active_action:   int,
 }
 
 encounter_begin :: proc(encounter: ^Encounter) {
@@ -120,6 +120,7 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 	clear(&encounter.display_actions)
 	encounter.active_entity = (encounter.active_entity + 1) % len(encounter.combat_queue)
 	encounter.actions_left = 3
+	encounter.active_action = 0
 	entity := encounter_get_active_ptr(encounter)
 	assert(entity != nil, "The Entity should always exists here")
 	if .Pc in entity.tags {
@@ -127,9 +128,7 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 		append(&encounter.display_actions, get_action(.Strike))
 		append(&encounter.display_actions, get_action(.Stride))
 		append(&encounter.display_actions, get_action(.Step))
-
 	}
-
 }
 
 Exploration :: struct {}
@@ -411,8 +410,9 @@ game_draw :: proc() {
 			ui_action_bar_begin_draw(action_bar)
 			ui_action_bar_end_draw(action_bar)
 
-			for action in mode.display_actions {
-				ui_action_bar_draw_card(action_bar, action)
+			for action, idx in mode.display_actions {
+				meta := UiActionMeta{mode.active_entity == idx}
+				ui_action_bar_draw_card(action_bar, action, meta)
 			}
 		}
 	}
