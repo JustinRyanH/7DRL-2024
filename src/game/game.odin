@@ -536,8 +536,6 @@ game_process_events :: proc(mem: ^GameMemory) {
 
 		}
 	}
-
-
 }
 
 game_entity_handle_move_command :: proc(
