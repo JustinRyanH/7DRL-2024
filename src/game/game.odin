@@ -131,6 +131,16 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 	}
 }
 
+encounter_preview_next_action :: proc(encounter: ^Encounter) {
+	num_of_actions := len(encounter.display_actions)
+	if num_of_actions > 0 {
+		encounter.active_action += 1
+		if encounter.active_action > num_of_actions {
+			encounter.active_action = 0
+		}
+	}
+}
+
 Exploration :: struct {}
 Downtime :: struct {}
 
@@ -271,13 +281,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 
 		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
-			num_of_actions := len(mode.display_actions)
-			if num_of_actions > 0 {
-				mode.active_action += 1
-				if mode.active_action > num_of_actions {
-					mode.active_action = 0
-				}
-			}
+			encounter_preview_next_action(&mode)
 		}
 	}
 	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
