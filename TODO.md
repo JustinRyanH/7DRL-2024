@@ -25,6 +25,8 @@
 [ ] Display the Traits for Actions
 [ ] Only use the White atlas, and pick the colors from the pallete
 [ ] Origin can be an enum or a position
+[ ] Display Hands for the Selected Items
+[ ] Display a Portait for Selected
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
