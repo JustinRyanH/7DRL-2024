@@ -49,6 +49,10 @@ GameAtlasList :: struct {
 	transparent_color: ImageHandle,
 	trail:             ImageHandle,
 }
+EntityTags :: enum {
+	Pc,
+	Npc,
+}
 
 EntityHandle :: distinct Handle
 Entity :: struct {
@@ -58,6 +62,7 @@ Entity :: struct {
 	color:          Color,
 	movement_speed: int,
 	action:         EntityAction,
+	tags:           bit_set[EntityTags],
 }
 
 // The Entity is waiting for command
@@ -174,14 +179,14 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, EntityWait{}}
+	e^ = Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, EntityWait{}, {.Pc}}
 	g_mem.character = h
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
 		data_pool_add(
 			&g_mem.entities,
-			Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, EntityWait{}},
+			Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, EntityWait{}, {.Npc}},
 		)
 	}
 
