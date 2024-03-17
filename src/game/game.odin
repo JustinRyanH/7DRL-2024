@@ -266,8 +266,18 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			encounter_next_character(&mode)
 		}
 
-		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
+		if input.was_just_released(frame_input, input.KeyboardKey.SPACE) {
 			encounter_next_character(&mode)
+		}
+
+		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
+			num_of_actions := len(mode.display_actions)
+			if num_of_actions > 0 {
+				mode.active_action += 1
+				if mode.active_action > num_of_actions {
+					mode.active_action = 0
+				}
+			}
 		}
 	}
 	// screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
@@ -411,7 +421,7 @@ game_draw :: proc() {
 			ui_action_bar_end_draw(action_bar)
 
 			for action, idx in mode.display_actions {
-				meta := UiActionMeta{mode.active_entity == idx}
+				meta := UiActionMeta{mode.active_action == idx}
 				ui_action_bar_draw_card(action_bar, action, meta)
 			}
 		}
