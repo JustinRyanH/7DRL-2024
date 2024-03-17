@@ -92,6 +92,7 @@ Encounter :: struct {
 	display_actions: [dynamic]CharacterAction,
 	ui:              EncounterUi,
 	actions_left:    int,
+	selected_action: int,
 }
 
 encounter_begin :: proc(encounter: ^Encounter) {
@@ -218,7 +219,7 @@ game_setup :: proc() {
 	g_mem.ui_action_bar.spell_large_b = ctx.draw_cmds.text.load_font(
 		"assets/fonts/spellbook_large_bold.ttf",
 	)
-	g_mem.ui_action_bar.bar_size = Vector2{900, 160}
+	g_mem.ui_action_bar.bar_size = Vector2{900, 130}
 	image, img_load_err = ctx.draw_cmds.load_img("assets/textures/pf2e_action_icons.png")
 	if img_load_err != .NoError {
 		panic(fmt.tprintf("Bad Image Load: %v", img_load_err))

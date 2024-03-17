@@ -260,6 +260,9 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 
 	pos :=
 		ui.position - Vector2{ui.bar_size.x * 0.5 - 75 * 0.5, 0} + Vector2{ui.x_start_pointer, 0}
+	if ui.selected_action == id {
+		pos += Vector2{0, -8}
+	}
 	size := Vector2{100, 100}
 	line_padding := Vector2{8, 0}
 
@@ -276,11 +279,7 @@ ui_action_bar_draw_card :: proc(ui: ^UiActionBar, action: CharacterAction) {
 	line_end := line_start + Vector2{size.x, 0} - line_padding * 2
 
 	draw_cmds.draw_shape(Rectangle{pos + Vector2{6, 6}, size, 0.0}, BrownRust)
-	if ui.selected_action == id {
-		draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, RED)
-	} else {
-		draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
-	}
+	draw_cmds.draw_shape(Rectangle{pos, size, 0.0}, Fawn)
 
 	txt_settings := FancyTextDefaults
 	txt_settings.color = JudgeGrey
