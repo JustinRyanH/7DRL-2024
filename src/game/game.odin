@@ -440,38 +440,6 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 	}
 
-
-	// switch action in &character.action {
-	// case EntityWait:
-	// 	character.display_pos = world_pos_to_vec(character.pos)
-
-	// 	wpf := WorldPathfinder{}
-	// 	world_path_finder_init(&wpf, g_mem.character, world_pos_int)
-	// 	path_new, path_status := world_path_finder_get_path_t(wpf)
-	// 	if path_status == .PathFound {
-	// 		maybe_path = path_new
-	// 	}
-
-	// 	if input.was_just_released(frame_input, .D) {
-	// 		character.pos += WorldPosition{1, 0}
-	// 	}
-	// 	if input.was_just_released(frame_input, .A) {
-	// 		character.pos -= WorldPosition{1, 0}
-	// 	}
-	// 	if input.was_just_released(frame_input, .W) {
-	// 		character.pos -= WorldPosition{0, 1}
-	// 	}
-	// 	if input.was_just_released(frame_input, .S) {
-	// 		character.pos += WorldPosition{0, 1}
-	// 	}
-
-	// 	if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-	// 		game_order_entity_move(g_mem, g_mem.character, maybe_path)
-	// 	}
-	// case EntityMove:
-	// 	game_entity_handle_move_command(g_mem.character, character, &action)
-	// }
-
 	char_world_pos := world_pos_to_vec(character.pos) * 16
 	camera_dist := math.length2(char_world_pos - camera.target)
 
