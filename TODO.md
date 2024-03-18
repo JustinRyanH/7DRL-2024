@@ -32,6 +32,7 @@
 [ ] Display a Portait for Selected
 [ ] I think I need an action system that stories itself in a DataPool, so I can have
 multi-frame actions
+[ ] Allow Custom Paths, and Movement Undo (Unless a Roll has Happened)
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
