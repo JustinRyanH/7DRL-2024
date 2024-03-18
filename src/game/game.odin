@@ -16,6 +16,10 @@ import mu "../microui"
 KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
+DirectCommand :: enum {
+	BeginWait,
+}
+
 StartMoving :: struct {
 	path: []Step,
 }
@@ -29,6 +33,7 @@ MoveCommandOutOfRange :: struct {
 EncounterEvent :: union {
 	StartMoving,
 	MoveCommandOutOfRange,
+	DirectCommand,
 }
 
 MovementCell :: struct {
@@ -208,12 +213,45 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 		switch v in evt {
 		case StartMoving:
 			encounter.state = PerformingMovement{v.path, 0, 0}
-			fmt.println("Start Moving", encounter)
 		case MoveCommandOutOfRange:
 			// TODO: Toast the error
 			fmt.printf("Out of Range: %v", v)
+
+		case DirectCommand:
+			switch v {
+			case .BeginWait:
+				entity := encounter_get_active_ptr(encounter)
+				entity.display_pos = world_pos_to_vec(entity.pos)
+				encounter.state = nil
+			}
 		}
 	}
+}
+
+encounter_perform_movement :: proc(encounter: ^Encounter, state: ^PerformingMovement) {
+	dt := input.frame_query_delta(g_input)
+	entity := encounter_get_active_ptr(encounter)
+
+
+	state.percentage += dt * 5
+	if state.percentage >= 1 {
+		if state.current_step < len(state.path) - 2 {
+			left := state.percentage - 1
+			state.percentage = left
+			state.current_step += 1
+		} else {
+			ring_buffer_append(&encounter.event_queue, DirectCommand.BeginWait)
+			delete(state.path)
+			return
+		}
+	}
+
+	step := state.current_step
+	last_step := world_pos_to_vec(state.path[step].position)
+	next_step := world_pos_to_vec(state.path[step + 1].position)
+
+	entity.pos = state.path[step + 1].position
+	entity.display_pos = math.lerp(last_step, next_step, state.percentage)
 }
 
 Exploration :: struct {}
@@ -387,6 +425,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 				if is_within_range {
 					path_copy := make([]Step, len(state.path))
 					copy(path_copy, state.path)
+					slice.reverse(path_copy)
 					ring_buffer_append(&mode.event_queue, StartMoving{path_copy})
 				} else {
 					cost := step_total_cost(state.path)
@@ -397,6 +436,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 				}
 			}
 		case PerformingMovement:
+			encounter_perform_movement(&mode, &state)
 		}
 	}
 
