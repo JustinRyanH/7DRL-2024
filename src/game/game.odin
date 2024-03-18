@@ -94,8 +94,8 @@ MovementKind :: enum {
 
 WaitingMovement :: struct {
 	// TempAllocator, remove for every frame
-	path: []Step,
-	kind: MovementKind,
+	path_t: []Step,
+	kind:   MovementKind,
 }
 
 PerformingMovement :: struct {
@@ -416,19 +416,19 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			world_path_finder_init(&wpf, g_mem.character, world_pos_int)
 			path_new, path_status := world_path_finder_get_path_t(wpf)
 			if path_status == .PathFound {
-				state.path = path_new
+				state.path_t = path_new
 			}
 
 			if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-				is_within_range := draw_is_within_range(state.path, state.kind, entity)
+				is_within_range := draw_is_within_range(state.path_t, state.kind, entity)
 				e_handle := encounter_get_active_handle(&mode)
 				if is_within_range {
-					path_copy := make([]Step, len(state.path))
-					copy(path_copy, state.path)
+					path_copy := make([]Step, len(state.path_t))
+					copy(path_copy, state.path_t)
 					slice.reverse(path_copy)
 					ring_buffer_append(&mode.event_queue, StartMoving{path_copy})
 				} else {
-					cost := step_total_cost(state.path)
+					cost := step_total_cost(state.path_t)
 					ring_buffer_append(
 						&mode.event_queue,
 						MoveCommandOutOfRange{e_handle, cost, state.kind},
@@ -531,7 +531,7 @@ game_draw :: proc() {
 
 			#partial switch state in &mode.state {
 			case WaitingMovement:
-				draw_proposed_path(state.path, state.kind, entity)
+				draw_proposed_path(state.path_t, state.kind, entity)
 
 			}
 		}
