@@ -1,7 +1,6 @@
 # TODO
 
-[ ] Create a System to display the current proposed action
-[ ] Disable the In-accessible actions
+[ ] Show Actions Left, Show how many actions will be consumed
 [ ] Add a Next Turn Button
 
 ## 2024-03-03
@@ -33,6 +32,7 @@
 [ ] I think I need an action system that stories itself in a DataPool, so I can have
 multi-frame actions
 [ ] Allow Custom Paths, and Movement Undo (Unless a Roll has Happened)
+[ ] Disable the In-accessible actions
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
@@ -43,6 +43,11 @@ multi-frame actions
 ### Problems to Check for
 
 [ ] Ring Buffer had a bug when it became full. I need to check into this more
+
+
+## Done
+
+[x] Create a System to display the current proposed action
 
 ## THOUGHTS
 
