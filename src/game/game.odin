@@ -556,14 +556,16 @@ game_draw :: proc() {
 	#partial switch mode in &g_mem.game_mode {
 	case Encounter:
 		{
+			entity := encounter_get_active_handle(&mode)
 			action_bar := &g_mem.ui_action_bar
-			ui_action_bar_begin_draw(action_bar)
+			ui_action_bar_begin_draw(action_bar, entity)
 			ui_action_bar_end_draw(action_bar)
 
 			for action, idx in mode.display_actions {
 				meta := UiActionMeta{mode.active_action == idx}
 				ui_action_bar_draw_card(action_bar, action, meta)
 			}
+			ui_action_bar_draw_cost(action_bar)
 		}
 	}
 

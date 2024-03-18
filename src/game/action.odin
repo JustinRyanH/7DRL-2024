@@ -116,6 +116,7 @@ ActionType :: enum {
 }
 
 UiActionBar :: struct {
+	entity_handle:   EntityHandle,
 	position:        Vector2,
 	bar_size:        Vector2,
 	x_start_pointer: f32,
@@ -297,13 +298,19 @@ ui_action_bar_reset :: proc(ui: ^UiActionBar) {
 	ui.x_start_pointer = 32
 }
 
-ui_action_bar_begin_draw :: proc(ui: ^UiActionBar) {
+ui_action_bar_begin_draw :: proc(ui: ^UiActionBar, handle: EntityHandle) {
 	width, height := input.frame_query_dimensions(g_input)
 	ui.position = Vector2{width / 2, height - ui.bar_size.y * 0.5 - 8}
-
+	ui.entity_handle = handle
 
 	ctx.draw_cmds.draw_shape(Rectangle{ui.position, ui.bar_size + Vector2{8, 8}, 0}, JudgeGrey)
 	ctx.draw_cmds.draw_shape(Rectangle{ui.position, ui.bar_size, 0}, Ferra)
+}
+
+ui_action_bar_draw_cost :: proc(ui: ^UiActionBar) {
+	entity := encounter_get_active_ptr(ui.entity_handle)
+	assert(entity != nil, "Programmer Error: This should never been nil")
+
 }
 
 ui_action_bar_end_draw :: proc(ui: ^UiActionBar) {}
