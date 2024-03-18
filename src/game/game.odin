@@ -200,6 +200,17 @@ encounter_preview_next_action :: proc(encounter: ^Encounter) {
 	}
 }
 
+encounter_preview_previous_action :: proc(encounter: ^Encounter) {
+	num_of_actions := len(encounter.display_actions)
+	if num_of_actions == 0 {
+		return
+	}
+	encounter.active_action -= 1
+	if encounter.active_action < 0 {
+		encounter.active_action = num_of_actions - 1
+	}
+}
+
 encounter_selected_action :: proc(encounter: ^Encounter) -> (CharacterAction, bool) {
 	num_of_actions := len(encounter.display_actions)
 	if num_of_actions > 0 && encounter.active_action < num_of_actions {
@@ -393,8 +404,11 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			encounter_next_character(&mode)
 		}
 
-		if input.was_just_released(frame_input, input.KeyboardKey.RIGHT) {
+		if input.was_just_released(frame_input, input.KeyboardKey.D) {
 			encounter_preview_next_action(&mode)
+		}
+		if input.was_just_released(frame_input, input.KeyboardKey.A) {
+			encounter_preview_previous_action(&mode)
 		}
 
 		entity := encounter_get_active_ptr(&mode)
