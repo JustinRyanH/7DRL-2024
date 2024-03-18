@@ -191,11 +191,12 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 
 encounter_preview_next_action :: proc(encounter: ^Encounter) {
 	num_of_actions := len(encounter.display_actions)
-	if num_of_actions > 0 {
-		encounter.active_action += 1
-		if encounter.active_action >= num_of_actions {
-			encounter.active_action = 0
-		}
+	if num_of_actions == 0 {
+		return
+	}
+	encounter.active_action += 1
+	if encounter.active_action >= num_of_actions {
+		encounter.active_action = 0
 	}
 }
 
