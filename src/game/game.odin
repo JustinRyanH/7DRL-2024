@@ -17,22 +17,17 @@ KbKey :: input.KeyboardKey
 MouseBtn :: input.MouseButton
 
 StartMoving :: struct {
-	entity: EntityHandle,
-	path:   []Step,
-}
-
-BeginWait :: struct {
-	entity: EntityHandle,
+	path: []Step,
 }
 
 MoveCommandOutOfRange :: struct {
 	entity:     EntityHandle,
 	total_cost: int,
+	kind:       MovementKind,
 }
 
-GameEvent :: union {
+EncounterEvent :: union {
 	StartMoving,
-	BeginWait,
 	MoveCommandOutOfRange,
 }
 
@@ -114,6 +109,7 @@ Encounter :: struct {
 	active_entity:   int,
 	combat_queue:    [dynamic]EntityHandle,
 	display_actions: [dynamic]CharacterAction,
+	event_queue:     RingBuffer(32, EncounterEvent),
 	ui:              EncounterUi,
 	state:           EncounterState,
 	actions_left:    int,
@@ -132,6 +128,9 @@ encounter_end :: proc(encounter: ^Encounter) {
 }
 
 encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
+	if !encounter_waiting_for_input(encounter) {
+		return
+	}
 	#partial switch action.type {
 	case .Stride:
 		wait := WaitingMovement{}
@@ -144,11 +143,29 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 	}
 }
 
-encounter_get_active_ptr :: proc(encounter: ^Encounter) -> (ent: ^Entity) {
+
+encounter_get_active_handle :: proc(encounter: ^Encounter) -> EntityHandle {
 	if (encounter.active_entity < 0 || len(encounter.combat_queue) == 0) {
+		return EntityHandle{}
+	}
+	return encounter.combat_queue[encounter.active_entity]
+}
+
+encounter_waiting_for_input :: proc(encounter: ^Encounter) -> bool {
+	#partial switch v in encounter.state {
+	case PerformingMovement:
+		return false
+	case:
+		return true
+	}
+}
+
+encounter_get_active_ptr :: proc(encounter: ^Encounter) -> (ent: ^Entity) {
+	handle := encounter_get_active_handle(encounter)
+	if handle == 0 {
 		return
 	}
-	return data_pool_get_ptr(&g_mem.entities, encounter.combat_queue[encounter.active_entity])
+	return data_pool_get_ptr(&g_mem.entities, handle)
 }
 
 // This is a Multi-Frame Action, So this needs to be cleaned up for that later
@@ -186,6 +203,19 @@ encounter_selected_action :: proc(encounter: ^Encounter) -> (CharacterAction, bo
 	return CharacterAction{}, false
 }
 
+encounter_process_events :: proc(encounter: ^Encounter) {
+	for evt in ring_buffer_pop(&encounter.event_queue) {
+		switch v in evt {
+		case StartMoving:
+			encounter.state = PerformingMovement{v.path, 0, 0}
+			fmt.println("Start Moving", encounter)
+		case MoveCommandOutOfRange:
+			// TODO: Toast the error
+			fmt.printf("Out of Range: %v", v)
+		}
+	}
+}
+
 Exploration :: struct {}
 Downtime :: struct {}
 
@@ -204,7 +234,6 @@ GameMemory :: struct {
 
 
 	// Game
-	event_queue:   RingBuffer(32, GameEvent),
 	entities:      Entities,
 	character:     EntityHandle,
 	camera:        Camera2D,
@@ -310,13 +339,13 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	camera := &g_mem.camera
 	assert(character != nil, "The player should always be in the game")
 
-	game_process_events(g_mem)
-
 	draw_camera := &ctx.draw_cmds.camera
 
 	#partial switch mode in &g_mem.game_mode {
 	case Encounter:
 		assert(len(mode.combat_queue) > 0, "Hey you need a combat queue idiot")
+
+		encounter_process_events(&mode)
 		if mode.active_entity < 0 {
 			encounter_next_character(&mode)
 		}
@@ -351,6 +380,23 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			if path_status == .PathFound {
 				state.path = path_new
 			}
+
+			if input.was_just_released(frame_input, input.MouseButton.LEFT) {
+				is_within_range := draw_is_within_range(state.path, state.kind, entity)
+				e_handle := encounter_get_active_handle(&mode)
+				if is_within_range {
+					path_copy := make([]Step, len(state.path))
+					copy(path_copy, state.path)
+					ring_buffer_append(&mode.event_queue, StartMoving{path_copy})
+				} else {
+					cost := step_total_cost(state.path)
+					ring_buffer_append(
+						&mode.event_queue,
+						MoveCommandOutOfRange{e_handle, cost, state.kind},
+					)
+				}
+			}
+		case PerformingMovement:
 		}
 	}
 
@@ -582,98 +628,37 @@ can_entity_move_into_position :: proc(
 	return ent_at_pos == entity
 }
 
-game_order_entity_move :: proc(mem: ^GameMemory, handle: EntityHandle, path: []Step) {
-	if len(path) == 0 {
-		// TODO: This should have a warning log
-		return
-	}
-	entity := data_pool_get_ptr(&mem.entities, handle)
-	if entity == nil {
-		return
-	}
-
-	total_cost := step_total_cost(maybe_path)
-	if total_cost > entity.movement_speed {
-		ring_buffer_append(&mem.event_queue, MoveCommandOutOfRange{handle, total_cost})
-		return
-	}
-	next_evt := StartMoving{}
-	next_evt.entity = g_mem.character
-	next_evt.path = make([]Step, len(maybe_path))
-	copy(next_evt.path, maybe_path)
-	slice.reverse(next_evt.path)
-	ring_buffer_append(&g_mem.event_queue, next_evt)
-}
-
-game_process_events :: proc(mem: ^GameMemory) {
-	for event in ring_buffer_pop(&mem.event_queue) {
-		switch evt in event {
-		case StartMoving:
-			entity := data_pool_get_ptr(&mem.entities, evt.entity)
-			// TODO: Warn when we give command to non-existant entity
-			if entity != nil {
-				move := EntityMove{}
-
-				move.path = evt.path
-				entity.action = move
-
-				assert(len(move.path) > 0, "we shouldn't have zero paths moves")
-			}
-		case BeginWait:
-			entity := data_pool_get_ptr(&mem.entities, evt.entity)
-			// TODO: Warn when we give command to non-existant entity
-			if entity != nil {
-				entity.action = EntityWait{}
-			}
-		case MoveCommandOutOfRange:
-			// TODO: Let's make a little Toast
-			e, found := data_pool_get(&mem.entities, evt.entity)
-			if found {
-				fmt.printf(
-					"Out of Range, Max of %dft but tried to travel %dft\n",
-					e.movement_speed * 5,
-					evt.total_cost * 5,
-				)
-			}
-
-		}
-	}
-}
-
-game_entity_handle_move_command :: proc(
-	handle: EntityHandle,
-	entity: ^Entity,
-	action: ^EntityMove,
-) {
-	mem := g_mem
-	dt := input.frame_query_delta(g_input)
-
-	action.percentage += dt * 5
-	if action.percentage >= 1 {
-		if action.current_step < len(action.path) - 2 {
-			left := action.percentage - 1
-			action.percentage = left
-			action.current_step += 1
-		} else {
-			action.percentage = 1
-			ring_buffer_append(&mem.event_queue, BeginWait{handle})
-			delete(action.path)
-			return
-		}
-	}
-
-	step := action.current_step
-	last_step := world_pos_to_vec(action.path[step].position)
-	next_step := world_pos_to_vec(action.path[step + 1].position)
-
-	entity.pos = action.path[step + 1].position
-	entity.display_pos = math.lerp(last_step, next_step, action.percentage)
-}
-
 max_walk_count := 128
 
 pulse_value :: proc(v: f32) -> f32 {
 	return (math.sin(v) + 1) / 2
+}
+
+draw_is_within_range :: proc(path: []Step, movemnt_kind: MovementKind, entity: ^Entity) -> bool {
+	if len(path) == 0 {
+		return false
+	}
+	total_cost := 0
+	#reverse for step in path {
+		p := step.position
+		if p == entity.pos {
+			continue
+		}
+		total_cost += step.step_cost
+
+		switch movemnt_kind {
+		case .Step:
+			if total_cost > 1 {
+				return false
+			}
+		case .Stride:
+			if total_cost > entity.movement_speed {
+				return false
+			}
+		}
+
+	}
+	return true
 }
 
 draw_proposed_path :: proc(path: []Step, movemnt_kind: MovementKind, entity: ^Entity) {
@@ -681,13 +666,11 @@ draw_proposed_path :: proc(path: []Step, movemnt_kind: MovementKind, entity: ^En
 	draw_camera := &ctx.draw_cmds.camera
 
 	total_cost := 0
-	step_count := 0
 	#reverse for step in path {
 		p := step.position
 		if p == entity.pos {
 			continue
 		}
-		step_count += 1
 		total_cost += step.step_cost
 
 		color := Color{1, 0, 0, 0.5}
