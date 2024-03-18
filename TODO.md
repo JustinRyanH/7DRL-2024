@@ -1,8 +1,9 @@
 # TODO
 
 [ ] Show Actions Left, Show how many actions will be consumed
+[ ] Combine Actions for something like strike
 [ ] Add a Next Turn Button
-
+ 
 ## 2024-03-03
 
 [x] Render Character on Screen
@@ -14,7 +15,7 @@
 
 ## Combat
 
-[x] Turns
+[-] Turns
 [ ] Actions
 
 ### Nice to Haves
