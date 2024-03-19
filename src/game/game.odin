@@ -21,6 +21,7 @@ DirectCommand :: enum {
 }
 
 StartMoving :: struct {
+	cost: int,
 	path: []Step,
 }
 
@@ -95,6 +96,7 @@ MovementKind :: enum {
 WaitingMovement :: struct {
 	// TempAllocator, remove for every frame
 	path_t: []Step,
+	cost:   int,
 	kind:   MovementKind,
 }
 
@@ -140,11 +142,13 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 	case .Stride:
 		wait := WaitingMovement{}
 		wait.kind = .Stride
+		wait.cost = action.cost
 		encounter.state = wait
 	case .Step:
 		wait := WaitingMovement{}
 		wait.kind = .Step
 		encounter.state = wait
+		wait.cost = action.cost
 	}
 }
 
@@ -225,10 +229,10 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 		switch v in evt {
 		case StartMoving:
 			encounter.state = PerformingMovement{v.path, 0, 0}
+			encounter.actions_left -= v.cost
 		case MoveCommandOutOfRange:
 			// TODO: Toast the error
 			fmt.printf("Out of Range: %v", v)
-
 		case DirectCommand:
 			switch v {
 			case .BeginWait:
@@ -441,7 +445,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 					path_copy := make([]Step, len(state.path_t))
 					copy(path_copy, state.path_t)
 					slice.reverse(path_copy)
-					ring_buffer_append(&mode.event_queue, StartMoving{path_copy})
+					ring_buffer_append(&mode.event_queue, StartMoving{state.cost, path_copy})
 				} else {
 					cost := step_total_cost(state.path_t)
 					ring_buffer_append(
@@ -565,7 +569,7 @@ game_draw :: proc() {
 				meta := UiActionMeta{mode.active_action == idx}
 				ui_action_bar_draw_card(action_bar, action, meta)
 			}
-			ui_action_bar_draw_cost(action_bar)
+			ui_action_bar_draw_cost(action_bar, mode.actions_left)
 		}
 	}
 

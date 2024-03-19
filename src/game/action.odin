@@ -307,7 +307,7 @@ ui_action_bar_begin_draw :: proc(ui: ^UiActionBar, handle: EntityHandle) {
 	ctx.draw_cmds.draw_shape(Rectangle{ui.position, ui.bar_size, 0}, Ferra)
 }
 
-ui_action_bar_draw_cost :: proc(ui: ^UiActionBar) {
+ui_action_bar_draw_cost :: proc(ui: ^UiActionBar, actions_left: int) {
 	entity := data_pool_get_ptr(&g_mem.entities, ui.entity_handle)
 	assert(entity != nil, "Programmer Error: This should never been nil")
 
@@ -322,11 +322,13 @@ ui_action_bar_draw_cost :: proc(ui: ^UiActionBar) {
 
 	start_pos := pos - Vector2{1, 0} * size.x * 0.5 + Vector2{32, 0}
 
-	for i := 0; i < 3; i += 1 {
+	available_action_pos := Vector2{2, 1} * 16
+	used_action_pos := Vector2{1, 1} * 16
+	for i := 1; i <= 3; i += 1 {
 		atlas := AtlasImage{}
 		atlas.image = ui.action_atlas
 		atlas.pos = start_pos
-		atlas.src.pos = Vector2{1, 1} * 16
+		atlas.src.pos = available_action_pos if i <= actions_left else used_action_pos
 		atlas.src.size = Vector2{1, 1} * 16
 		atlas.origin = Vector2{1, 1} * 40 * 0.5
 		atlas.size = Vector2{1, 1} * 40
