@@ -253,6 +253,45 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 	}
 }
 
+encounter_perform_waiting_movement :: proc(encounter: ^Encounter, state: ^WaitingMovement) {
+	frame_input := g_input
+	draw_camera := &ctx.draw_cmds.camera
+
+	screen_pos := draw_camera.screen_to_world_2d(g_mem.camera, input.mouse_position(g_input))
+	world_pos := world_pos_from_space_as_vec(screen_pos)
+	world_pos_int := world_pos_from_space(screen_pos)
+
+	entity := encounter_get_active_ptr(encounter)
+
+	if g_mem.is_cursor_over_ui {
+		return
+	}
+
+	wpf := WorldPathfinder{}
+	world_path_finder_init(&wpf, g_mem.character, world_pos_int)
+	path_new, path_status := world_path_finder_get_path_t(wpf)
+	if path_status == .PathFound {
+		state.path_t = path_new
+	}
+
+	if input.was_just_released(frame_input, input.MouseButton.LEFT) {
+		is_within_range := draw_is_within_range(state.path_t, state.kind, entity)
+		e_handle := encounter_get_active_handle(encounter)
+		if is_within_range {
+			path_copy := make([]Step, len(state.path_t))
+			copy(path_copy, state.path_t)
+			slice.reverse(path_copy)
+			ring_buffer_append(&encounter.event_queue, StartMoving{state.cost, path_copy})
+		} else {
+			cost := step_total_cost(state.path_t)
+			ring_buffer_append(
+				&encounter.event_queue,
+				MoveCommandOutOfRange{e_handle, cost, state.kind},
+			)
+		}
+	}
+}
+
 encounter_perform_movement :: proc(encounter: ^Encounter, state: ^PerformingMovement) {
 	dt := input.frame_query_delta(g_input)
 	entity := encounter_get_active_ptr(encounter)
@@ -394,13 +433,14 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	ui_action_bar_reset(&g_mem.ui_action_bar)
 	g_input = frame_input
 
-
 	dt := input.frame_query_delta(frame_input)
-	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
-	camera := &g_mem.camera
-	assert(character != nil, "The player should always be in the game")
+	mouse_pos := input.mouse_position(frame_input)
 
-	draw_camera := &ctx.draw_cmds.camera
+	action_bar_rect := Rectangle{g_mem.ui_action_bar.position, g_mem.ui_action_bar.bar_size, 0}
+	_, g_mem.is_cursor_over_ui = shape_is_point_inside_rect(mouse_pos, action_bar_rect)
+
+	camera := &g_mem.camera
+
 
 	#partial switch mode in &g_mem.game_mode {
 	case Encounter:
@@ -431,36 +471,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 
 		#partial switch state in &mode.state {
 		case WaitingMovement:
-			screen_pos := draw_camera.screen_to_world_2d(
-				g_mem.camera,
-				input.mouse_position(g_input),
-			)
-			world_pos := world_pos_from_space_as_vec(screen_pos)
-			world_pos_int := world_pos_from_space(screen_pos)
-
-			wpf := WorldPathfinder{}
-			world_path_finder_init(&wpf, g_mem.character, world_pos_int)
-			path_new, path_status := world_path_finder_get_path_t(wpf)
-			if path_status == .PathFound {
-				state.path_t = path_new
-			}
-
-			if input.was_just_released(frame_input, input.MouseButton.LEFT) {
-				is_within_range := draw_is_within_range(state.path_t, state.kind, entity)
-				e_handle := encounter_get_active_handle(&mode)
-				if is_within_range {
-					path_copy := make([]Step, len(state.path_t))
-					copy(path_copy, state.path_t)
-					slice.reverse(path_copy)
-					ring_buffer_append(&mode.event_queue, StartMoving{state.cost, path_copy})
-				} else {
-					cost := step_total_cost(state.path_t)
-					ring_buffer_append(
-						&mode.event_queue,
-						MoveCommandOutOfRange{e_handle, cost, state.kind},
-					)
-				}
-			}
+			encounter_perform_waiting_movement(&mode, &state)
 		case PerformingMovement:
 			encounter_perform_movement(&mode, &state)
 		case OtherState:
@@ -470,6 +481,8 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		}
 	}
 
+	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
+	assert(character != nil, "The player should always be in the game")
 	char_world_pos := world_pos_to_vec(character.pos) * 16
 	camera_dist := math.length2(char_world_pos - camera.target)
 
