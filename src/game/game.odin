@@ -107,9 +107,14 @@ PerformingMovement :: struct {
 	percentage:   f32,
 }
 
+OtherState :: enum {
+	OutOfActions,
+}
+
 EncounterState :: union {
 	PerformingMovement,
 	WaitingMovement,
+	OtherState,
 }
 
 Encounter :: struct {
@@ -136,6 +141,10 @@ encounter_end :: proc(encounter: ^Encounter) {
 
 encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 	if !encounter_waiting_for_input(encounter) {
+		return
+	}
+	if action.cost > encounter.actions_left {
+		encounter.state = OtherState.OutOfActions
 		return
 	}
 	#partial switch action.type {
@@ -456,6 +465,10 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			}
 		case PerformingMovement:
 			encounter_perform_movement(&mode, &state)
+		case OtherState:
+			switch state {
+			case .OutOfActions:
+			}
 		}
 	}
 
