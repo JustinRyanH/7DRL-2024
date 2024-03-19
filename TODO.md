@@ -1,8 +1,7 @@
 # TODO
 
-[ ] Show Actions Left, Show how many actions will be consumed
-[ ] Combine Actions for something like strike
 [ ] Add a Next Turn Button
+[ ] Combine Actions for something like strike
  
 ## 2024-03-03
 
@@ -44,12 +43,13 @@ multi-frame actions
 
 ### Problems to Check for
 
-[ ] Ring Buffer had a bug when it became full. I need to check into this more
+[x] Ring Buffer had a bug when it became full. I need to check into this more
 
 
 ## Done
 
 [x] Create a System to display the current proposed action
+[x] Show Actions Left, Show how many actions will be consumed
 
 ## THOUGHTS
 
