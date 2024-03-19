@@ -34,6 +34,7 @@
 multi-frame actions
 [ ] Allow Custom Paths, and Movement Undo (Unless a Roll has Happened)
 [ ] Disable the In-accessible actions
+[ ] Indicate a selected card cannot be performed
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
