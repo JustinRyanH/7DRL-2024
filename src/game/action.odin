@@ -345,8 +345,8 @@ ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
 	pos :=
 		ui.position + Vector2{ui.bar_size.x * 0.5, 0} - Vector2{size.x * 0.5, 0} + Vector2{-16, 16}
 
-
-	ctx.draw_cmds.draw_shape(Rectangle{pos, size, 0}, JudgeGrey)
+	shape := Rectangle{pos, size, 0}
+	ctx.draw_cmds.draw_shape(shape, JudgeGrey)
 	ctx.draw_cmds.draw_shape(Rectangle{pos - Vector2{0, 4}, size - Vector2{4, 4}, 0}, Fawn)
 
 	// text_dims := ctx.draw_cmds.text.measure_text(
@@ -355,12 +355,13 @@ ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
 	// 	font_size,
 	// 	0,
 	// )
+	txt_offset := Vector2{0, font_size * 0.5}
 
 	txt_settings := FancyTextDefaults
 	txt_settings.color = JudgeGrey
 	txt_settings.alignment = .Middle
-	draw_text_fancy(font, "Complete", pos - Vector2{0, font_size * 0.5}, font_size, txt_settings)
-	draw_text_fancy(font, "Turn", pos + Vector2{0, font_size * 0.5}, font_size, txt_settings)
+	draw_text_fancy(font, "Complete", pos - txt_offset, font_size, txt_settings)
+	draw_text_fancy(font, "Turn", pos + txt_offset, font_size, txt_settings)
 }
 
 ui_action_bar_end_draw :: proc(ui: ^UiActionBar) {}
