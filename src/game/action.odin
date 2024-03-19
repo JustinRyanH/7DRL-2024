@@ -339,6 +339,7 @@ ui_action_bar_draw_cost :: proc(ui: ^UiActionBar, actions_left: int) {
 	}
 }
 ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
+	mouse_pos := input.mouse_position(g_input)
 	font_size: f32 = 32
 	size := Vector2{120, 80}
 	font := ui.spell_large_b
@@ -346,8 +347,17 @@ ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
 		ui.position + Vector2{ui.bar_size.x * 0.5, 0} - Vector2{size.x * 0.5, 0} + Vector2{-16, 16}
 
 	shape := Rectangle{pos, size, 0}
+	color := Fawn
+	offset := Vector2{0, 4}
+	is_over_button := shape_is_point_inside_rect(mouse_pos, shape)
+	if is_over_button {
+		offset.y -= 2
+		color.a = 0.8
+	}
+
+
 	ctx.draw_cmds.draw_shape(shape, JudgeGrey)
-	ctx.draw_cmds.draw_shape(Rectangle{pos - Vector2{0, 4}, size - Vector2{4, 4}, 0}, Fawn)
+	ctx.draw_cmds.draw_shape(Rectangle{pos - offset, size - Vector2{4, 4}, 0}, color)
 
 	// text_dims := ctx.draw_cmds.text.measure_text(
 	// 	font,

@@ -437,7 +437,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	mouse_pos := input.mouse_position(frame_input)
 
 	action_bar_rect := Rectangle{g_mem.ui_action_bar.position, g_mem.ui_action_bar.bar_size, 0}
-	_, g_mem.is_cursor_over_ui = shape_is_point_inside_rect(mouse_pos, action_bar_rect)
+	g_mem.is_cursor_over_ui = shape_is_point_inside_rect(mouse_pos, action_bar_rect)
 
 	camera := &g_mem.camera
 
