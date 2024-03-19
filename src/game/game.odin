@@ -289,26 +289,25 @@ GameMode :: union {
 }
 
 GameMemory :: struct {
-	scene_size:    Vector2,
+	scene_size:        Vector2,
 
 	// Assets
-	fonts:         GameFonts,
-	atlas_list:    GameAtlasList,
+	fonts:             GameFonts,
+	atlas_list:        GameAtlasList,
 
 
 	// Game
-	entities:      Entities,
-	character:     EntityHandle,
-	camera:        Camera2D,
-	game_mode:     GameMode,
-	ui_action_bar: UiActionBar,
+	entities:          Entities,
+	character:         EntityHandle,
+	camera:            Camera2D,
+	game_mode:         GameMode,
+	ui_action_bar:     UiActionBar,
+	is_cursor_over_ui: bool,
 }
 
 ctx: ^Context
 g_input: input.FrameInput
 g_mem: ^GameMemory
-
-maybe_path: []Step
 
 current_input :: #force_inline proc() -> input.UserInput {
 	return g_input.current_frame
@@ -395,7 +394,6 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 	ui_action_bar_reset(&g_mem.ui_action_bar)
 	g_input = frame_input
 
-	maybe_path = []Step{}
 
 	dt := input.frame_query_delta(frame_input)
 	character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
@@ -500,33 +498,6 @@ game_draw :: proc() {
 
 		character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 		assert(character != nil, "Character should always exists")
-
-		total_cost := 0
-		#reverse for step in maybe_path {
-			p := step.position
-			total_cost += step.step_cost
-			color := Color{1, 0, 0, 0.5}
-			if total_cost > character.movement_speed {
-				color.a = 0.2
-			}
-
-			draw_cmds.draw_shape(Rectangle{world_pos_to_vec(p) * 16, Vector2{14, 14}, 0}, color)
-		}
-		if len(maybe_path) > 0 {
-			total_cost := step_total_cost(maybe_path)
-
-			screen_pos := draw_camera.screen_to_world_2d(
-				game.camera,
-				input.mouse_position(g_input),
-			)
-			draw_cmds.draw_text(
-				fmt.ctprintf("%dft", total_cost * 5),
-				cast(i32)screen_pos.x,
-				cast(i32)screen_pos.y + 10,
-				8,
-				RED,
-			)
-		}
 
 
 		entity_iter := data_pool_new_iter(&game.entities)
