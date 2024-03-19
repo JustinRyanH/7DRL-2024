@@ -156,8 +156,8 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 	case .Step:
 		wait := WaitingMovement{}
 		wait.kind = .Step
-		encounter.state = wait
 		wait.cost = action.cost
+		encounter.state = wait
 	}
 }
 
