@@ -1,5 +1,6 @@
 # TODO
 
+[ ] Fix Hot Reload Cleaup setup
 [ ] Add a Next Turn Button
 [ ] Combine Actions for something like strike
  
