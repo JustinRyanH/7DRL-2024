@@ -583,6 +583,7 @@ game_draw :: proc() {
 				ui_action_bar_draw_card(action_bar, action, meta)
 			}
 			ui_action_bar_draw_cost(action_bar, mode.actions_left)
+			ui_action_bar_draw_turn_btn(action_bar)
 		}
 	}
 

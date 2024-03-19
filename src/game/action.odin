@@ -338,11 +338,34 @@ ui_action_bar_draw_cost :: proc(ui: ^UiActionBar, actions_left: int) {
 		start_pos += padding + Vector2{32, 0}
 	}
 }
+ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
+	font_size: f32 = 32
+	size := Vector2{120, 80}
+	font := ui.spell_large_b
+	pos :=
+		ui.position + Vector2{ui.bar_size.x * 0.5, 0} - Vector2{size.x * 0.5, 0} + Vector2{-16, 16}
+
+
+	ctx.draw_cmds.draw_shape(Rectangle{pos, size, 0}, JudgeGrey)
+	ctx.draw_cmds.draw_shape(Rectangle{pos - Vector2{0, 4}, size - Vector2{4, 4}, 0}, Fawn)
+
+	// text_dims := ctx.draw_cmds.text.measure_text(
+	// 	font,
+	// 	"Does that complete your turn?",
+	// 	font_size,
+	// 	0,
+	// )
+
+	txt_settings := FancyTextDefaults
+	txt_settings.color = JudgeGrey
+	txt_settings.alignment = .Middle
+	draw_text_fancy(font, "Complete", pos - Vector2{0, font_size * 0.5}, font_size, txt_settings)
+	draw_text_fancy(font, "Turn", pos + Vector2{0, font_size * 0.5}, font_size, txt_settings)
+}
 
 ui_action_bar_end_draw :: proc(ui: ^UiActionBar) {}
 
 @(private = "file")
 get_action_id :: proc(action: CharacterAction) -> u64 {
 	return generate_u64_from_cstring(action.name)
-
 }
