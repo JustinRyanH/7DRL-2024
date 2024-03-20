@@ -1,9 +1,8 @@
 # TODO
 
-[ ] Fix Hot Reload Cleaup setup
-[ ] Add a Next Turn Button
+[ ] Add Strike Action
 [ ] Combine Actions for something like strike
- 
+[ ] Fix Hot Reload Cleaup setup
 ## 2024-03-03
 
 [x] Render Character on Screen
@@ -16,7 +15,7 @@
 ## Combat
 
 [-] Turns
-[ ] Actions
+[-] Actions
 
 ### Nice to Haves
 
@@ -49,6 +48,7 @@ multi-frame actions
 
 ## Done
 
+[x] Add a Next Turn Button
 [x] Create a System to display the current proposed action
 [x] Show Actions Left, Show how many actions will be consumed
 
