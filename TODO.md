@@ -36,6 +36,7 @@ multi-frame actions
 [ ] Disable the In-accessible actions
 [ ] Indicate a selected card cannot be performed
 [ ] Faction IDs
+[ ] Get the Camera-to-Mouse once per frame
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
