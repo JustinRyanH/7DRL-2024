@@ -18,6 +18,7 @@ MouseBtn :: input.MouseButton
 
 DirectCommand :: enum {
 	BeginWait,
+	EndTurn,
 }
 
 StartMoving :: struct {
@@ -109,6 +110,7 @@ PerformingMovement :: struct {
 
 OtherState :: enum {
 	OutOfActions,
+	AiTurn,
 }
 
 EncounterState :: union {
@@ -200,6 +202,9 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 		append(&encounter.display_actions, get_action(.Stride))
 		append(&encounter.display_actions, get_action(.Step))
 	}
+	if .Npc in entity.tags {
+		encounter.state = OtherState.AiTurn
+	}
 }
 
 encounter_preview_next_action :: proc(encounter: ^Encounter) {
@@ -248,6 +253,8 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 				entity := encounter_get_active_ptr(encounter)
 				entity.display_pos = world_pos_to_vec(entity.pos)
 				encounter.state = nil
+			case .EndTurn:
+				encounter_next_character(encounter)
 			}
 		}
 	}
@@ -477,6 +484,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		case OtherState:
 			switch state {
 			case .OutOfActions:
+			case .AiTurn:
 			}
 		}
 	}
@@ -567,7 +575,7 @@ game_draw :: proc() {
 				ui_action_bar_draw_card(action_bar, action, meta)
 			}
 			ui_action_bar_draw_cost(action_bar, mode.actions_left)
-			ui_action_bar_draw_turn_btn(action_bar)
+			ui_action_bar_draw_turn_btn(action_bar, &mode)
 		}
 	}
 

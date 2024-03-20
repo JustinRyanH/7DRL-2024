@@ -338,7 +338,7 @@ ui_action_bar_draw_cost :: proc(ui: ^UiActionBar, actions_left: int) {
 		start_pos += padding + Vector2{32, 0}
 	}
 }
-ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
+ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar, encounter: ^Encounter) {
 	mouse_pos := input.mouse_position(g_input)
 	font_size: f32 = 32
 	size := Vector2{120, 80}
@@ -353,6 +353,11 @@ ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
 	if is_over_button {
 		offset.y -= 2
 		color.a = 0.8
+
+		if input.was_just_released(g_input, input.MouseButton.LEFT) {
+			ring_buffer_append(&encounter.event_queue, DirectCommand.EndTurn)
+
+		}
 	}
 
 
