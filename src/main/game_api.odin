@@ -192,7 +192,7 @@ game_api_hot_load :: proc(api: GameAPI) -> GameAPI {
 	if new_api_ok {
 		game_memory := api.memory()
 
-		game_api_unload(api)
+		// game_api_unload(api)
 
 		new_api.hot_reloaded(game_memory)
 		return new_api
