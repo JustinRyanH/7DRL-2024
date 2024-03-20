@@ -515,8 +515,6 @@ game_draw :: proc() {
 		draw_camera.begin_drawing_2d(game.camera)
 		defer draw_camera.end_drawing_2d()
 
-		draw_cmds.draw_grid(100, 16, Vector2{4, 4} * 50)
-
 		character: ^Entity = data_pool_get_ptr(&g_mem.entities, g_mem.character)
 		assert(character != nil, "Character should always exists")
 
