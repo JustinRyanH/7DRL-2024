@@ -12,6 +12,7 @@ ImageType :: enum {
 Man :: SpritePosition{25, 0}
 Goblin :: SpritePosition{25, 2}
 TargetPosition :: SpritePosition{36, 12}
+AttackTargetPosition :: SpritePosition{20, 14}
 
 
 map_position_to_atlas :: proc(atlas: ^AtlasImage, spr_pos: SpritePosition) {

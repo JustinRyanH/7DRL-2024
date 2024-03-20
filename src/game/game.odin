@@ -64,6 +64,7 @@ Health :: struct {
 
 EntityHandle :: distinct Handle
 Entity :: struct {
+	handle:         EntityHandle,
 	pos:            WorldPosition,
 	display_pos:    Vector2,
 	img_type:       ImageType,
@@ -92,7 +93,9 @@ WaitingMovement :: struct {
 	kind:   MovementKind,
 }
 
-WaitingAttack :: struct {}
+WaitingAttack :: struct {
+	hover_entity: EntityHandle,
+}
 
 PerformingMovement :: struct {
 	// StdAlloxator, needs to be cleaned up when removed
@@ -159,7 +162,7 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 		encounter.state = wait
 	case .Strike:
 		wait := WaitingAttack{}
-		encounter := wait
+		encounter.state = wait
 	}
 }
 
@@ -173,7 +176,7 @@ encounter_get_active_handle :: proc(encounter: ^Encounter) -> EntityHandle {
 
 encounter_waiting_for_input :: proc(encounter: ^Encounter) -> bool {
 	#partial switch v in encounter.state {
-	case PerformingMovement:
+	case PerformingMovement, PerformingAttack:
 		return false
 	case:
 		return true
@@ -259,6 +262,28 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 			}
 		}
 	}
+}
+
+encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingAttack) {
+	screen_pos := input.mouse_position(g_input)
+	mouse_pos := ctx.draw_cmds.camera.screen_to_world_2d(g_mem.camera, screen_pos)
+	active_entity_handle := encounter_get_active_handle(encounter)
+	entity_iter := data_pool_new_iter(&g_mem.entities)
+	state.hover_entity = 0
+	for entity in data_pool_iter(&entity_iter) {
+		if entity.handle == active_entity_handle {
+			continue
+		}
+		hit_rect := Rectangle{entity.display_pos * 16, Vector2{16, 16}, 0}
+		if shape_is_point_inside_rect(mouse_pos, hit_rect) {
+			state.hover_entity = entity.handle
+			break
+		}
+	}
+	// Is there an enemy in range?
+	// Highlight the enemy near me
+	// If there isn't in range?
+	// Can I move and can move within range
 }
 
 encounter_perform_waiting_movement :: proc(encounter: ^Encounter, state: ^WaitingMovement) {
@@ -385,7 +410,7 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	new_char := Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, {}, {.Pc}}
+	new_char := Entity{h, WorldPosition{}, Vector2{}, .Man, WHITE, 6, {}, {.Pc}}
 	new_char.health.max = 17
 	new_char.health.current = 17
 
@@ -394,11 +419,11 @@ game_setup :: proc() {
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		ent := Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, {}, {.Npc}}
-		ent.health.max = 10
-		ent.health.current = 10
-
-		data_pool_add(&g_mem.entities, ent)
+		e, h, is_ok = data_pool_add_empty(&g_mem.entities)
+		assert(is_ok, "This should not fail")
+		e^ = Entity{h, pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, {}, {.Npc}}
+		e.health.max = 10
+		e.health.current = 10
 	}
 
 	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
@@ -486,10 +511,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		case WaitingMovement:
 			encounter_perform_waiting_movement(&mode, &state)
 		case WaitingAttack:
-		// Is there an enemy in range?
-		// Highlight the enemy near me
-		// If there isn't in range?
-		// Can I move and can move within range
+			encounter_perform_waiting_attack(&mode, &state)
 		case PerformingMovement:
 			encounter_perform_movement(&mode, &state)
 		case OtherState:
@@ -565,7 +587,23 @@ game_draw :: proc() {
 			#partial switch state in &mode.state {
 			case WaitingMovement:
 				draw_proposed_path(state.path_t, state.kind, entity)
+			case WaitingAttack:
+				if state.hover_entity != 0 {
+					entity, found := data_pool_get(&g_mem.entities, state.hover_entity)
+					assert(found, "We should not be requesting a cleaned up entity")
 
+					target_atlas := AtlasImage{}
+					target_atlas.image = g_mem.atlas_list.transparent_color
+					map_position_to_atlas(&target_atlas, AttackTargetPosition)
+					target_atlas.pos = entity.display_pos * 16
+					target_atlas.size = Vector2{16, 16} * 2
+					target_atlas.origin = target_atlas.size * 0.5
+					color := RED
+					color.a = 0.5
+
+					draw_cmds.draw_img(target_atlas, color)
+
+				}
 			}
 		}
 	}
