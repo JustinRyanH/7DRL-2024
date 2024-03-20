@@ -69,8 +69,8 @@ Entity :: struct {
 	img_type:       ImageType,
 	color:          Color,
 	movement_speed: int,
-	tags:           bit_set[EntityTags],
 	health:         Health,
+	tags:           bit_set[EntityTags],
 }
 
 Entities :: DataPool(128, Entity, EntityHandle)
@@ -375,7 +375,7 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	new_char := Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, {.Pc}, {}}
+	new_char := Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, {}, {.Pc}}
 	new_char.health.max = 17
 	new_char.health.current = 17
 
@@ -384,7 +384,7 @@ game_setup :: proc() {
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		ent := Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, {.Npc}, {}}
+		ent := Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, {}, {.Npc}}
 		ent.health.max = 10
 		ent.health.current = 10
 
