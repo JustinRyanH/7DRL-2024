@@ -32,6 +32,7 @@
 [ ] I think I need an action system that stories itself in a DataPool, so I can have
 multi-frame actions
 [ ] Allow Custom Paths, and Movement Undo (Unless a Roll has Happened)
+[ ] Don't consume the full action if some movement if left over
 [ ] Disable the In-accessible actions
 [ ] Indicate a selected card cannot be performed
 
