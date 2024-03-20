@@ -92,12 +92,16 @@ WaitingMovement :: struct {
 	kind:   MovementKind,
 }
 
+WaitingAttack :: struct {}
+
 PerformingMovement :: struct {
 	// StdAlloxator, needs to be cleaned up when removed
 	path:         []Step,
 	current_step: int,
 	percentage:   f32,
 }
+
+PerformingAttack :: struct {}
 
 OtherState :: enum {
 	OutOfActions,
@@ -106,7 +110,9 @@ OtherState :: enum {
 
 EncounterState :: union {
 	PerformingMovement,
+	PerformingAttack,
 	WaitingMovement,
+	WaitingAttack,
 	OtherState,
 }
 
@@ -151,6 +157,9 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 		wait.kind = .Step
 		wait.cost = action.cost
 		encounter.state = wait
+	case .Strike:
+		wait := WaitingAttack{}
+		encounter := wait
 	}
 }
 
@@ -192,6 +201,7 @@ encounter_next_character :: proc(encounter: ^Encounter) {
 		// TODO: this should be an event, so we can animate them onto the board
 		append(&encounter.display_actions, get_action(.Stride))
 		append(&encounter.display_actions, get_action(.Step))
+		append(&encounter.display_actions, get_action(.Strike))
 	}
 	if .Npc in entity.tags {
 		encounter.state = OtherState.AiTurn
@@ -475,6 +485,11 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 		#partial switch state in &mode.state {
 		case WaitingMovement:
 			encounter_perform_waiting_movement(&mode, &state)
+		case WaitingAttack:
+		// Is there an enemy in range?
+		// Highlight the enemy near me
+		// If there isn't in range?
+		// Can I move and can move within range
 		case PerformingMovement:
 			encounter_perform_movement(&mode, &state)
 		case OtherState:
@@ -728,4 +743,13 @@ draw_proposed_path :: proc(path: []Step, movemnt_kind: MovementKind, entity: ^En
 			RED,
 		)
 	}
+}
+
+entity_is_next_to_entity :: proc(a, b: Entity, range: int) -> bool {
+	distance := b.pos - a.pos
+	distance_abs := math.abs(distance)
+	x_good := distance_abs.x >= 0 && distance_abs.x <= range
+	y_good := distance_abs.y >= 0 && distance_abs.y <= range
+
+	return x_good && y_good
 }
