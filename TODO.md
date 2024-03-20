@@ -35,6 +35,7 @@ multi-frame actions
 [ ] Don't consume the full action if some movement if left over
 [ ] Disable the In-accessible actions
 [ ] Indicate a selected card cannot be performed
+[ ] Faction IDs
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
