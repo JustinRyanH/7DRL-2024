@@ -37,6 +37,7 @@ multi-frame actions
 [ ] Indicate a selected card cannot be performed
 [ ] Faction IDs
 [ ] Get the Camera-to-Mouse once per frame
+[ ] Display Pos should be adjusted for sprite size
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
