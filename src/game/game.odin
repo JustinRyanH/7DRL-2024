@@ -56,6 +56,12 @@ EntityTags :: enum {
 	Npc,
 }
 
+Health :: struct {
+	current: int,
+	max:     int,
+	temp:    int,
+}
+
 EntityHandle :: distinct Handle
 Entity :: struct {
 	pos:            WorldPosition,
@@ -63,23 +69,8 @@ Entity :: struct {
 	img_type:       ImageType,
 	color:          Color,
 	movement_speed: int,
-	action:         EntityAction,
 	tags:           bit_set[EntityTags],
-}
-
-// The Entity is waiting for command
-EntityWait :: struct {}
-
-// The Entity has been commanded to move
-EntityMove :: struct {
-	path:         []Step,
-	current_step: int,
-	percentage:   f32,
-}
-
-EntityAction :: union {
-	EntityWait,
-	EntityMove,
+	health:         Health,
 }
 
 Entities :: DataPool(128, Entity, EntityHandle)
@@ -384,15 +375,20 @@ game_setup :: proc() {
 	if !is_ok {
 		panic("Failed to add Character")
 	}
-	e^ = Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, EntityWait{}, {.Pc}}
+	new_char := Entity{WorldPosition{}, Vector2{}, .Man, WHITE, 6, {.Pc}, {}}
+	new_char.health.max = 17
+	new_char.health.current = 17
+
+	e^ = new_char
 	g_mem.character = h
 
 	goblin_pos := [4]WorldPosition{{-4, -5}, {-3, 3}, {4, 3}, {4, -2}}
 	for pos in goblin_pos {
-		data_pool_add(
-			&g_mem.entities,
-			Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, EntityWait{}, {.Npc}},
-		)
+		ent := Entity{pos, world_pos_to_vec(pos), .Goblin, GREEN, 4, {.Npc}, {}}
+		ent.health.max = 10
+		ent.health.current = 10
+
+		data_pool_add(&g_mem.entities, ent)
 	}
 
 	image, img_load_err := ctx.draw_cmds.load_img("assets/textures/colored_transparent_packed.png")
