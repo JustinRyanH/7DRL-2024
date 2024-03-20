@@ -65,3 +65,4 @@ and some about theres.
 - We're just gong to build out a movement grid around any specific character,
 pass that into the WorldPathfinder to decide if we move there.
 The movement Grid will have meta data such as difficult of travel and such.
+- You can have only one free action per trigger (I'll need to dig into this more)
