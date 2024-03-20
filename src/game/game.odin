@@ -376,7 +376,7 @@ game_setup :: proc() {
 	camera.target = Vector2{}
 	camera.offset = (g_mem.scene_size / 2) - Vector2{16, 16} - Vector2{0, 64}
 	camera.rotation = 0
-	camera.zoom = 2.5
+	camera.zoom = 3
 
 	g_mem.camera = camera
 
