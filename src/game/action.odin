@@ -359,12 +359,6 @@ ui_action_bar_draw_turn_btn :: proc(ui: ^UiActionBar) {
 	ctx.draw_cmds.draw_shape(shape, JudgeGrey)
 	ctx.draw_cmds.draw_shape(Rectangle{pos - offset, size - Vector2{4, 4}, 0}, color)
 
-	// text_dims := ctx.draw_cmds.text.measure_text(
-	// 	font,
-	// 	"Does that complete your turn?",
-	// 	font_size,
-	// 	0,
-	// )
 	txt_offset := Vector2{0, font_size * 0.5}
 
 	txt_settings := FancyTextDefaults
