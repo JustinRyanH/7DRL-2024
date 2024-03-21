@@ -323,7 +323,16 @@ encounter_perform_waiting_movement :: proc(encounter: ^Encounter, state: ^Waitin
 
 	entity := encounter_get_active_ptr(encounter)
 
+	state.path_t = []Step{}
+
 	if g_mem.is_cursor_over_ui {
+		return
+	}
+	if shape_is_point_inside_rect(
+		   screen_pos,
+		   Rectangle{entity.display_pos * 16, Vector2{16, 16}, 0},
+	   ) {
+		fmt.println("Shape over char")
 		return
 	}
 
