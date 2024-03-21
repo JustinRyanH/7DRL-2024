@@ -38,6 +38,7 @@ multi-frame actions
 [ ] Faction IDs
 [ ] Get the Camera-to-Mouse once per frame
 [ ] Display Pos should be adjusted for sprite size
+[ ] Add in shake to the attack (if we can attack?)
 
 ## Actions GUI
 [ ] Do a Scissoring on the Cards
