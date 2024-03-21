@@ -282,6 +282,7 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 			}
 		case SingleAttackEvent:
 			encounter.state = PerformingAttack{}
+			encounter.actions_left -= v.cost
 		}
 	}
 }
