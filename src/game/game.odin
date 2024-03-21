@@ -32,10 +32,22 @@ MoveCommandOutOfRange :: struct {
 	kind:       MovementKind,
 }
 
+AttackType :: enum {
+	MeleeStrike,
+	RangeStrike,
+}
+
+SingleAttackEvent :: struct {
+	target:   EntityHandle,
+	attacker: EntityHandle,
+	type:     AttackType,
+}
+
 EncounterEvent :: union {
 	StartMoving,
 	MoveCommandOutOfRange,
 	DirectCommand,
+	SingleAttackEvent,
 }
 
 MovementCell :: struct {
@@ -268,6 +280,8 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 			case .EndTurn:
 				encounter_next_character(encounter)
 			}
+		case SingleAttackEvent:
+			encounter.state = PerformingAttack{}
 		}
 	}
 }
@@ -303,9 +317,15 @@ encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingA
 
 		state.is_within_range = entity_is_next_to_entity(hover_entity, encounter_entity, 1)
 		state.hover_time += dt
+
+		if input.was_just_released(g_input, input.MouseButton.LEFT) {
+			attk := SingleAttackEvent{state.hover_entity, active_entity_handle, .MeleeStrike}
+			ring_buffer_append(&encounter.event_queue, attk)
+		}
 	} else {
 		state.hover_time = 0
 	}
+
 
 	// Is there an enemy in range?
 	// Highlight the enemy near me
@@ -529,11 +549,14 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			encounter_next_character(&mode)
 		}
 
-		if input.was_just_released(frame_input, input.KeyboardKey.D) {
-			encounter_preview_next_action(&mode)
-		}
-		if input.was_just_released(frame_input, input.KeyboardKey.A) {
-			encounter_preview_previous_action(&mode)
+
+		if encounter_waiting_for_input(&mode) {
+			if input.was_just_released(frame_input, input.KeyboardKey.D) {
+				encounter_preview_next_action(&mode)
+			}
+			if input.was_just_released(frame_input, input.KeyboardKey.A) {
+				encounter_preview_previous_action(&mode)
+			}
 		}
 
 		entity := encounter_get_active_ptr(&mode)
@@ -550,6 +573,7 @@ game_update :: proc(frame_input: input.FrameInput) -> bool {
 			encounter_perform_waiting_attack(&mode, &state)
 		case PerformingMovement:
 			encounter_perform_movement(&mode, &state)
+		case PerformingAttack:
 		case OtherState:
 			switch state {
 			case .OutOfActions:
