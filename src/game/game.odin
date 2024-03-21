@@ -94,7 +94,8 @@ WaitingMovement :: struct {
 }
 
 WaitingAttack :: struct {
-	hover_entity: EntityHandle,
+	hover_entity:    EntityHandle,
+	is_within_range: bool,
 }
 
 PerformingMovement :: struct {
@@ -268,8 +269,11 @@ encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingA
 	screen_pos := input.mouse_position(g_input)
 	mouse_pos := ctx.draw_cmds.camera.screen_to_world_2d(g_mem.camera, screen_pos)
 	active_entity_handle := encounter_get_active_handle(encounter)
-	entity_iter := data_pool_new_iter(&g_mem.entities)
+
 	state.hover_entity = 0
+	state.is_within_range = false
+
+	entity_iter := data_pool_new_iter(&g_mem.entities)
 	for entity in data_pool_iter(&entity_iter) {
 		if entity.handle == active_entity_handle {
 			continue
@@ -280,6 +284,18 @@ encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingA
 			break
 		}
 	}
+
+	if state.hover_entity != 0 {
+		hover_entity, ent_exists := data_pool_get(&g_mem.entities, state.hover_entity)
+		assert(ent_exists, "Hover Entity always exists")
+
+		encounter_entity, enc_ent_exists := data_pool_get(&g_mem.entities, active_entity_handle)
+		assert(enc_ent_exists, "Encounter Entity should exists")
+
+
+		state.is_within_range = entity_is_next_to_entity(hover_entity, encounter_entity, 1)
+	}
+
 	// Is there an enemy in range?
 	// Highlight the enemy near me
 	// If there isn't in range?
@@ -600,6 +616,9 @@ game_draw :: proc() {
 					target_atlas.origin = target_atlas.size * 0.5
 					color := RED
 					color.a = 0.5
+					if state.is_within_range {
+						color.a = 1
+					}
 
 					draw_cmds.draw_img(target_atlas, color)
 
