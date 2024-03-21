@@ -41,6 +41,7 @@ SingleAttackEvent :: struct {
 	target:   EntityHandle,
 	attacker: EntityHandle,
 	type:     AttackType,
+	cost:     int,
 }
 
 EncounterEvent :: union {
@@ -109,6 +110,7 @@ WaitingAttack :: struct {
 	hover_entity:    EntityHandle,
 	is_within_range: bool,
 	hover_time:      f32,
+	cost:            int,
 }
 
 PerformingMovement :: struct {
@@ -182,6 +184,7 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 		encounter.state = wait
 	case .Strike:
 		wait := WaitingAttack{}
+		wait.cost = action.cost
 		encounter.state = wait
 	}
 }
@@ -320,7 +323,12 @@ encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingA
 		state.hover_time += dt
 
 		if input.was_just_released(g_input, input.MouseButton.LEFT) {
-			attk := SingleAttackEvent{state.hover_entity, active_entity_handle, .MeleeStrike}
+			attk := SingleAttackEvent {
+				state.hover_entity,
+				active_entity_handle,
+				.MeleeStrike,
+				state.cost,
+			}
 			ring_buffer_append(&encounter.event_queue, attk)
 		}
 	} else {
