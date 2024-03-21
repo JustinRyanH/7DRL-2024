@@ -96,6 +96,7 @@ WaitingMovement :: struct {
 WaitingAttack :: struct {
 	hover_entity:    EntityHandle,
 	is_within_range: bool,
+	hover_time:      f32,
 }
 
 PerformingMovement :: struct {
@@ -127,6 +128,7 @@ Encounter :: struct {
 	event_queue:     RingBuffer(32, EncounterEvent),
 	ui:              EncounterUi,
 	state:           EncounterState,
+	current_action:  CharacterAction,
 	actions_left:    int,
 	active_action:   int,
 }
@@ -150,6 +152,11 @@ encounter_begin_wait :: proc(encounter: ^Encounter, action: CharacterAction) {
 		encounter.state = OtherState.OutOfActions
 		return
 	}
+	if encounter.current_action == action {
+		return
+	}
+
+	encounter.current_action = action
 	#partial switch action.type {
 	case .Stride:
 		wait := WaitingMovement{}
@@ -266,6 +273,7 @@ encounter_process_events :: proc(encounter: ^Encounter) {
 }
 
 encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingAttack) {
+	dt := input.frame_query_delta(g_input)
 	screen_pos := input.mouse_position(g_input)
 	mouse_pos := ctx.draw_cmds.camera.screen_to_world_2d(g_mem.camera, screen_pos)
 	active_entity_handle := encounter_get_active_handle(encounter)
@@ -294,6 +302,9 @@ encounter_perform_waiting_attack :: proc(encounter: ^Encounter, state: ^WaitingA
 
 
 		state.is_within_range = entity_is_next_to_entity(hover_entity, encounter_entity, 1)
+		state.hover_time += dt
+	} else {
+		state.hover_time = 0
 	}
 
 	// Is there an enemy in range?
@@ -618,6 +629,7 @@ game_draw :: proc() {
 					color.a = 0.5
 					if state.is_within_range {
 						color.a = 1
+						target_atlas.rotation = state.hover_time * 120
 					}
 
 					draw_cmds.draw_img(target_atlas, color)
