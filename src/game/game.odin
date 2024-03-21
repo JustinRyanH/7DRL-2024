@@ -120,7 +120,10 @@ PerformingMovement :: struct {
 	percentage:   f32,
 }
 
-PerformingAttack :: struct {}
+PerformingAttack :: struct {
+	attacker: EntityHandle,
+	defender: EntityHandle,
+}
 
 OtherState :: enum {
 	OutOfActions,
